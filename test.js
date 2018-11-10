@@ -8,4 +8,6 @@ process.argv.forEach(function (val, index, array) {
   }
 });
 
+
 game.simulate()
+game.printStatus()

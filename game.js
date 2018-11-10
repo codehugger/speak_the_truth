@@ -31,9 +31,10 @@ function shuffleArray(array) {
 }
 
 class Location {
-  constructor(game, name) {
+  constructor(game, name, truths=[]) {
     this.game = game
     this.name = name
+    this.truths = truths
   }
 
   characters() {
@@ -46,12 +47,31 @@ class Location {
 }
 
 class Character {
-  constructor(game, name, location=null, truths=[], alive=true) {
+  constructor(game, name, location=null, truths=[], alive=true, personality=[]) {
     this.game = game
     this.name = name
     this.location = location
     this.truths = truths
     this.alive = alive
+
+    if (personality.length == 4) {
+      this.aggression = personality[0]
+      this.curiosity = personality[1]
+      this.charisma = personality[2]
+      this.intelligence = personality[3]
+    } else {
+      this.aggression = Math.random()
+      this.curiosity = Math.random()
+      this.charisma = Math.random()
+      this.intelligence = Math.random()
+
+      var total = this.aggression + this.curiosity + this.charisma + this.intelligence
+
+      this.aggression = (this.aggression/total)
+      this.curiosity = (this.curiosity/total)
+      this.charisma = (this.charisma/total)
+      this.intelligence = (this.intelligence/total)
+    }
   }
 
   perform_action() {
@@ -59,20 +79,20 @@ class Character {
       return false
     }
 
-    var action = getRandomInt(100)
+    var action = Math.random() * 0.5
     var character = getRandomFromArray(this.location.characters())
     var location = getRandomFromArray(this.game.locations)
 
-    if (action == 1) {
+    if (action < 0.01) {
       this.game.wanderOff(this)
     }
-    else if (action == 2) {
+    else if (action < 0.02) {
       this.game.attack(this, character)
     }
-    else if (action > 2 && action < 10) {
+    else if (action < 0.12) {
       this.game.talk(this, character)
     }
-    else if (action > 10 && action < 20) {
+    else if (action < 0.22) {
       this.game.travel(this, location)
     }
     else {
@@ -100,7 +120,7 @@ class Character {
   }
 
   toString() {
-    return this.name
+    return `${this.name} (${this.aggression}, ${this.curiosity}, ${this.charisma}, ${this.intelligence})`
   }
 }
 
@@ -194,6 +214,20 @@ class Game {
       }
     }
     return allDead
+  }
+
+  printStatus() {
+    console.log("===== STATE OF THE WORLD =====")
+    for (var i = 0; i < this.characters.length; i++) {
+      var char = this.characters[i]
+      console.log(`- ${char.toString()}`)
+    }
+    console.log("---")
+    for (var i = 0; i < this.locations.length; i++) {
+      var loc = this.locations[i]
+      console.log(`- ${loc.toString()}`)
+    }
+    console.log("==============================")
   }
 
   truthLost() {
