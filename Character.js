@@ -1,12 +1,22 @@
 const randomGaussian = require('./Util.js').randomGaussian
 
+class Beleif {
+    constructor(truth, probability){
+        this.truth = truth
+        this.probability = probability
+    }
+    toString(){
+        return `[${this.probability}|${this.truth}]`
+    }
+}
 
 class Character {
     constructor(game, name, location=null, truths=[], alive=true, personality=[], inert=false) {
       this.game = game
       this.name = name
       this.location = location
-      this.truths = truths
+      //a newborn character will believe anything told to him 100%
+      this.truths = truths.map(x=>new Beleif(x, 1));
       this.alive = alive
       //inert means that this character will not 
       //try to use his personality to select actions
@@ -31,6 +41,13 @@ class Character {
       let sum = this.personality.reduce((x, y)=>x+y)
       this.personality = this.personality.map(x=>x/sum);
 
+    }
+
+    /**
+     * Sets a truth with 100% certainty.
+     */
+    setTruth(truth){
+        this.truths[truth.index] = new Beleif(truth, 1);
     }
 
     /**
@@ -113,8 +130,115 @@ class Character {
 
         return newPersonality;
     }
-  
+
+
+    receiveTruths(truths, from){
+
+        let likeness = this.similarity(from);
+        let intelligence = this.personality[3];
+
+        // if the characters intelligence is low, he will more probably beleive lies from bad people.
+        //to-do
+
+        truths.forEach(x=>{ 
+            if(typeof(this.truths[x.index]) === 'undefined' ) {
+                this.truths[x.index] = new Beleif(x, 1);
+            } 
+            else { 
+
+                if(this.truths[x.index].probability == 1){
+                    //he is unshake-able in his beleif. 
+                } else {
+                    //use the probability of lie to evaluate if this is a better truth. TODO!
+                    this.truths[x.index] = new Beleif(x, 1);
+                }
+
+            }
+        });
+
+    }
+
+    /**
+     * Determines if this character holds a certain truth that no other character holds. 
+     */
     hasEssentialTruth() {
+        
+        //if our model makes sense, then this guy will have some truths of probability 1, these can only be gotten from the game itslef.
+        let true_truths = this.truths.filter(x=> x.probability === 1).map(x=>x.truth);
+        //get other characters.
+        let others = this.game.characters.filter(x=> (x.name !== this.name) )
+
+        let other_char_truths = [];
+
+        for(var i = 0; i < others.length ; i++){
+            const c = others[i];
+            
+            //find true truths that this character has.
+            let t = c.truths.filter(x => (x.probability === 1.0) );
+            t = t.map( x => x.truth )
+            //
+            while(t.length != 0 ){
+                let el = t.pop();
+
+                if(typeof(el) === 'undefined'){
+                    continue;
+                }
+
+                if( typeof(other_char_truths[el.index]) === 'undefined'){
+                    other_char_truths[el.index] = el;
+                }
+
+            }
+
+        }
+
+        //loop through the truths this character knows, 
+        for (let i = 0; i < true_truths.length; i++) {
+            const element = true_truths[i];
+            //find a true truth
+            if(other_char_truths[element.index] !== element){
+                
+                return true;
+            }
+            
+        }
+
+        return false;
+        
+
+        /*
+        for (let i = 0; i < true_truths.length; i++) {
+            const t = true_truths[i];
+            found = false;
+
+            //check for others.
+            for (let j = 0; j < others.length; j++) {
+                const character = others[j];
+                let character_truths = character.truths.filter(x=>x.probability === 1).map(x=>x.truth);
+
+                //loop through character true_truths.
+                for(var n = 0; n < character_truths.length; n++){
+                    if(character_truths[n] === t){
+                        found = true;
+                        continue;
+                    }
+                }
+
+                if(found){
+                    break;
+                }
+                
+
+            }
+
+            if(!found){
+                return true
+            }
+            
+        }
+        return false;
+        */
+        /*
       for (var i = this.truths.length - 1; i >= 0; i--) {
         var truth = this.truths[i]
         var found = false
@@ -131,8 +255,8 @@ class Character {
         }
       }
       return false
+      */
     }
-  
     toString() {
       return `${this.name} (${this.personality.map(x=>x.toFixed(2))})`
     }

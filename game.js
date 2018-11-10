@@ -3,9 +3,21 @@ const names = require('./Names.js').names
 const Character = require('./Character.js').Character
 const Location = require('./Location.js').Location
 
+const randomGaussian = require('./Util.js').randomGaussian
+
 getRandomFromArray = require('./Util.js').getRandomFromArray;
 shuffleArray = require('./Util.js').shuffleArray;
 getRandomInt = require('./Util.js').getRandomInt;
+
+class Truth {
+  constructor(index, value){
+    this.index = index
+    this.value = value
+  }
+  toString(){
+    return `{${this.index},${this.value}}`
+  }
+}
 
 class Game {
   constructor(location_count=5, character_count=5, truth_count=5) {
@@ -31,14 +43,21 @@ class Game {
     }
 
     for (var i = 0; i < truth_count; i++) {
-      this.truths.push(i)
+
+      let truth = new Truth(i, Math.random()+5*Math.random()+7*Math.random()); 
+
+      this.truths.push(truth)
 
       // hand out the truth
       var character = getRandomFromArray(this.characters)
-      character.truths.push(i)
+      character.setTruth(truth)
+      
+      //locations will only sometimes have truths. 
+      if(Math.random() > 0.5){
+        var location = getRandomFromArray(this.locations)
+        location.truths[i] = truth
+      }
 
-      var location = getRandomFromArray(this.locations)
-      location.truths.push(i)
     }
   }
 
@@ -49,10 +68,19 @@ class Game {
 
     let probability_to_propogate_truth = 1-character1.similarity(character2) ;
 
-    if(Math.random() > probability_to_propogate_truth){
-      this.assignTruthToCharacter(character1, character2.truths, "conversation")
-    } else {
-      console.log(`${character2.name} Does not like ${character1.name} enough to tell them anything.`);
+    let val = Math.random();
+
+    if(val > probability_to_propogate_truth){
+      this.assignTruthToCharacter(character1, character2.truths, "conversation", character2)
+    } 
+    else {
+
+      if(val < probability_to_propogate_truth / 4){
+        console.log(`${character2.name} hates ${character1.name} enough to lie to them.`);
+        this.assignTruthToCharacter(character1, character2.truths.map(x=>x.value = randomGaussian(x.value, 1)), "lie", character2)
+      } else {
+        console.log(`${character2.name} Does not like ${character1.name} enough to tell them anything.`);
+      }
     }
 
   }
@@ -63,7 +91,7 @@ class Game {
       character2.alive = false
       this.keepTheTruthGoing(character2)
     }
-    this.assignTruthToCharacter(character1, character2.truths, "attack")
+    this.assignTruthToCharacter(character1, character2.truths, "attack", character2)
   }
 
   travel(character, location) {
@@ -92,29 +120,43 @@ class Game {
     }
   }
 
-  assignTruthToCharacter(character, truths, context) {
-    if (Math.random() < 0.5) {
-      var beforeTruthCount = character.truths.length
-      character.truths = [...new Set(character.truths.concat(truths))]
-      var afterTruthCount = character.truths.length
+  assignTruthToCharacter(character, truths, context, from) {
 
-      if (afterTruthCount > beforeTruthCount) {
-        console.log(`${character.name} has learned a new truth through ${context}`)
-      }
-    }
+    character.receiveTruths(truths, from);
+
+    console.log(`${character.name} has learned a new truth through ${context}`)
+    
+    
+    // if (Math.random() < 0.5) {
+    //   var beforeTruthCount = character.truths.length
+    //   character.truths = [...new Set(character.truths.concat(truths))]
+    //   var afterTruthCount = character.truths.length
+    
+    //   if (afterTruthCount > beforeTruthCount) {
+      //   }
+    // }
+
   }
 
   keepTheTruthGoing(character) {
+
     if (character.hasEssentialTruth()) {
       console.log(`${character.name} had essential truth`)
       
       let name = `${getRandomFromArray(names)} ${getRandomFromArray(names)}`
 
-      var replacement = new Character(this, name, getRandomFromArray(this.locations), character.truths, true, character.mutate())
+      var replacement = new Character(this, name, getRandomFromArray(this.locations), undefined, true, character.mutate())
+
+      let c_true_truths = character.truths.filter(x=>x.probability === 1).map(x=>x.truth);
+      c_true_truths.forEach(element => {
+        replacement.setTruth(element)
+      });
+      console.log(c_true_truths);
       
       this.characters.push(replacement)
       console.log(`${replacement.name} takes their place`)
-    }
+    } 
+    
   }
 
   simulate() {
@@ -155,14 +197,33 @@ class Game {
     console.log("==============================")
   }
 
+  /**
+   * Returns true if there is any truth that no alive character knows.
+   */
   truthLost() {
-    var truths = []
-    for (var i = this.characters.length - 1; i >= 0; i--) {
-      var char = this.characters[i]
-      if (char.hasEssentialTruth()) {
+    
+    let chars = this.characters.filter(x=>x.alive)
+
+    for(var i = 0; i < this.truths.length; i++){ 
+      const truth = this.truths[i]
+      let found =false;
+
+      for(var j = 0 ; j < chars.length ; j++){
+        let c_truth = chars[j].truths[truth.index]
+        if(!c_truth){
+          continue;
+        }
+        if(chars[j].truths[truth.index].truth === truth){
+          found = true;
+        }
+      }
+
+      if(!found){
         return true
       }
     }
+
+    return false;
   }
 
   simulateStep() {
@@ -204,7 +265,25 @@ class Game {
       currentChar.perform_action()
 
       // check if the current character knows everything
-      if (currentChar.truths.length == this.truths.length) {
+
+      let everythingCorrect = true;
+
+      for (let i = 0; i < this.truths.length; i++) {
+        const element = this.truths[i];
+
+        if( typeof(currentChar.truths[i]) === 'undefined'){
+          everythingCorrect = false;
+          break;
+        }
+
+        if(element !== currentChar.truths[i].truth){
+          
+          everythingCorrect = false;
+          break;
+        }
+      }
+
+      if (everythingCorrect) {
         console.log(`${currentChar.name} speaks the whole truth`)
         this.truthSayer = currentChar
         break
