@@ -1,36 +1,64 @@
 
 class Character {
-    constructor(game, name, location=null, truths=[], alive=true) {
+    constructor(game, name, location=null, truths=[], alive=true, personality=[]) {
       this.game = game
       this.name = name
       this.location = location
       this.truths = truths
       this.alive = alive
+  
+      if (personality.length == 4) {
+        this.aggression = personality[0]
+        this.curiosity = personality[1]
+        this.charisma = personality[2]
+        this.intelligence = personality[3]
+      } else {
+        this.aggression = Math.random()
+        this.curiosity = Math.random()
+        this.charisma = Math.random()
+        this.intelligence = Math.random()
+      }
+  
+      // aggression + curiosity + charisma + intelligence == 1
+      var total = this.aggression + this.curiosity + this.charisma + this.intelligence
+      this.aggression = (this.aggression/total)
+      this.curiosity = (this.curiosity/total)
+      this.charisma = (this.charisma/total)
+      this.intelligence = (this.intelligence/total)
     }
   
     perform_action() {
+      // dead men do nothing ... for now
       if (!this.alive) {
         return false
       }
   
-      var action = getRandomInt(100)
+      var noop = Math.random()
+      var action = Math.random()
       var character = getRandomFromArray(this.location.characters())
       var location = getRandomFromArray(this.game.locations)
   
-      if (action == 1) {
+      if (noop < 0.5) {
+        this.game.noop(this)
+      }
+      else if (action < 0.01) {
         this.game.wanderOff(this)
       }
-      else if (action == 2) {
+      // controlled by aggression
+      else if (action < (this.aggression)) {
         this.game.attack(this, character)
       }
-      else if (action > 2 && action < 10) {
+      // controlled by charisma
+      else if (action < (this.aggression + this.charisma)) {
         this.game.talk(this, character)
       }
-      else if (action > 10 && action < 20) {
+      // controlled by curiosity
+      else if (action < (this.aggression + this.charisma + this.curiosity)) {
         this.game.travel(this, location)
       }
-      else {
-        this.game.noop(this)
+      // controlled by intelligence
+      else if (action < 1.0) {
+        this.game.investigate(this, this.location)
       }
     }
   
@@ -54,8 +82,10 @@ class Character {
     }
   
     toString() {
-      return this.name
+      return `${this.name} (${this.aggression.toFixed(2)}, ${this.curiosity.toFixed(2)}, ${this.charisma.toFixed(2)}, ${this.intelligence.toFixed(2)})`
     }
 }
 
 module.exports = { Character }
+
+

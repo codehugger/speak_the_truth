@@ -31,6 +31,9 @@ class Game {
       // hand out the truth
       var character = getRandomFromArray(this.characters)
       character.truths.push(i)
+
+      var location = getRandomFromArray(this.locations)
+      location.truths.push(i)
     }
   }
 
@@ -38,7 +41,7 @@ class Game {
     if (this.verbose) {
       console.log(`${character1.name} talks to ${character2.name}`)
     }
-    character1.truths = [...new Set(character1.truths.concat(character2.truths))]
+    this.assignTruthToCharacter(character1, character2.truths, "conversation")
   }
 
   attack(character1, character2) {
@@ -47,13 +50,21 @@ class Game {
       character2.alive = false
       this.keepTheTruthGoing(character2)
     }
+    this.assignTruthToCharacter(character1, character2.truths, "attack")
   }
 
   travel(character, location) {
     if (this.verbose) {
       console.log(`${character.name} travels to ${location.name}`)
     }
-    character.location = location
+    this.assignTruthToCharacter(character, location.truths, "travel")
+  }
+
+  investigate(character, location) {
+    if (this.verbose) {
+      console.log(`${character.name} investigates ${location.name}`)
+    }
+    this.assignTruthToCharacter(character, location.truths, "investigation")
   }
 
   wanderOff(character) {
@@ -68,6 +79,18 @@ class Game {
     }
   }
 
+  assignTruthToCharacter(character, truths, context) {
+    if (Math.random() < 0.5) {
+      var beforeTruthCount = character.truths.length
+      character.truths = [...new Set(character.truths.concat(truths))]
+      var afterTruthCount = character.truths.length
+
+      if (afterTruthCount > beforeTruthCount) {
+        console.log(`${character.name} has learned a new truth through ${context}`)
+      }
+    }
+  }
+
   keepTheTruthGoing(character) {
     if (character.hasEssentialTruth()) {
       console.log(`${character.name} had essential truth`)
@@ -78,6 +101,8 @@ class Game {
   }
 
   simulate() {
+    this.printStatus()
+
     while (true) {
       if (!this.simulateStep()) {
         break;
@@ -95,6 +120,22 @@ class Game {
       }
     }
     return allDead
+  }
+
+  printStatus() {
+    console.log("===== STATE OF THE WORLD =====")
+    for (var i = 0; i < this.characters.length; i++) {
+      var char = this.characters[i]
+      console.log(`- ${char.toString()}`)
+      console.log(`  - knows: ${char.truths}`)
+    }
+    console.log("---")
+    for (var i = 0; i < this.locations.length; i++) {
+      var loc = this.locations[i]
+      console.log(`- ${loc.toString()}`)
+      console.log(`  - knows: ${loc.truths}`)
+    }
+    console.log("==============================")
   }
 
   truthLost() {
@@ -129,21 +170,6 @@ class Game {
     }
 
     this.simulationCount += 1
-
-    if (this.verbose) {
-      console.log("Current Status")
-    }
-
-    for (var i = 0; i < this.characters.length; i++) {
-      var char = this.characters[i]
-      if (this.verbose) {
-        if (char.alive) {
-          console.log(`${char} is at ${char.location} and knows [${char.truths}]`)
-        } else {
-          console.log(`${char} is dead`)
-        }
-      }
-    }
 
     if (this.verbose) {
       console.log(`Simulation #${this.simulationCount}`)

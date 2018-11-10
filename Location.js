@@ -2,6 +2,7 @@ class Location {
     constructor(game, name) {
       this.game = game
       this.name = name
+      this.truths = []
     }
   
     characters() {
