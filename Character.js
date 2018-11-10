@@ -14,34 +14,42 @@ class Character {
       
       if (personality.length == 4) {
         this.personality = personality;
-        this.aggression = personality[0]
-        this.curiosity = personality[1]
-        this.charisma = personality[2]
-        this.intelligence = personality[3]
+
       } else {
-        this.aggression = Math.random()
-        this.curiosity = Math.random()
-        this.charisma = Math.random()
-        this.intelligence = Math.random()
-        
+       
         this.personality = [
-            this.aggression,
-            this.curiosity,
-            this.charisma,
-            this.intelligence
+            Math.random(), 
+            Math.random(),
+            Math.random(),
+            Math.random()
         ]
 
       }
+
+      //Personality = [Agression, Charisma, Curiosity, Intelligence]
       
       let sum = this.personality.reduce((x, y)=>x+y)
       this.personality = this.personality.map(x=>x/sum);
 
-      // aggression + curiosity + charisma + intelligence == 1
-      var total = this.aggression + this.curiosity + this.charisma + this.intelligence
-      this.aggression = (this.aggression/total)
-      this.curiosity = (this.curiosity/total)
-      this.charisma = (this.charisma/total)
-      this.intelligence = (this.intelligence/total)
+    }
+
+    /**
+     * Finds the similarity of other character.
+     * @param {Other character to determine similarity to} other 
+     */
+    similarity(other){
+
+        //https://en.wikipedia.org/wiki/Cosine_similarity
+        let usum = 0;
+        
+        for (let i = 0; i < this.personality.length; i++) {
+            usum += (other.personality[i] * this.personality[i]);
+        }
+
+        let mySum = this.personality.reduce(        (x,y) => x + (y*y) )
+        let theirSum = other.personality.reduce(    (x,y) => x + (y*y) )
+        
+        return usum / (Math.sqrt(mySum)*Math.sqrt(theirSum));
     }
   
     perform_action() {
@@ -52,31 +60,40 @@ class Character {
   
       var noop = Math.random()
       var action = Math.random()
-      var character = getRandomFromArray(this.location.characters())
-      var location = getRandomFromArray(this.game.locations)
-  
+      var character = getRandomFromArray(this.location.characters().filter(x=> (x.name !== this.name)&& x.alive ))
+      var location = getRandomFromArray(this.game.locations.filter(x=>x.name !== this.location.name))
+      
+      let actions = [];
+
+      if(typeof(character) !== 'undefined'){
+          actions.push(this.game.attack.bind(this.game, this, character))
+          actions.push(this.game.talk.bind(this.game, this, character))
+          
+          if( this.similarity(character) < 0.1 ){
+            console.log(`${this.name} hates ${character.name}!`);
+            this.game.attack(this, character);
+            return;
+          }
+
+      }
+      if(typeof(location) !== 'undefined'){
+          actions.push(this.game.travel.bind(this.game, this, location))
+      }
+      actions.push(this.game.investigate.bind(this.game, this, this.location))
+      
       if (noop < 0.5) {
         this.game.noop(this)
       }
       else if (action < 0.01) {
         this.game.wanderOff(this)
       }
-      // controlled by aggression
-      else if (action < (this.aggression)) {
-        this.game.attack(this, character)
-      }
-      // controlled by charisma
-      else if (action < (this.aggression + this.charisma)) {
-        this.game.talk(this, character)
-      }
-      // controlled by curiosity
-      else if (action < (this.aggression + this.charisma + this.curiosity)) {
-        this.game.travel(this, location)
-      }
-      // controlled by intelligence
-      else if (action < 1.0) {
-        this.game.investigate(this, this.location)
-      }
+
+
+        
+      let a = getRandomFromArray(actions);
+      a();
+
+      
     }
 
     /**
@@ -93,10 +110,6 @@ class Character {
 
             )
         });
-        console.log(`${this.name} Has been mutated!
-                    ${this.personality}
-                    ${newPersonality}`);
-
 
         return newPersonality;
     }
@@ -121,7 +134,7 @@ class Character {
     }
   
     toString() {
-      return `${this.name} (${this.aggression.toFixed(2)}, ${this.curiosity.toFixed(2)}, ${this.charisma.toFixed(2)}, ${this.intelligence.toFixed(2)})`
+      return `${this.name} (${this.personality.map(x=>x.toFixed(2))})`
     }
 }
 

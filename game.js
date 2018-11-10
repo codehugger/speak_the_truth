@@ -1,3 +1,5 @@
+const names = require('./Names.js').names
+
 const Character = require('./Character.js').Character
 const Location = require('./Location.js').Location
 
@@ -21,7 +23,10 @@ class Game {
     }
 
     for (var i = 0; i < character_count; i++) {
-      var character = new Character(this, `Character ${i+1}`, getRandomFromArray(this.locations))
+
+      let name = `${getRandomFromArray(names)} ${getRandomFromArray(names)}`
+
+      var character = new Character(this, name, getRandomFromArray(this.locations))
       this.characters.push(character)
     }
 
@@ -41,7 +46,15 @@ class Game {
     if (this.verbose) {
       console.log(`${character1.name} talks to ${character2.name}`)
     }
-    this.assignTruthToCharacter(character1, character2.truths, "conversation")
+
+    let probability_to_propogate_truth = 1-character1.similarity(character2) ;
+
+    if(Math.random() > probability_to_propogate_truth){
+      this.assignTruthToCharacter(character1, character2.truths, "conversation")
+    } else {
+      console.log(`${character2.name} Does not like ${character1.name} enough to tell them anything.`);
+    }
+
   }
 
   attack(character1, character2) {
@@ -57,14 +70,14 @@ class Game {
     if (this.verbose) {
       console.log(`${character.name} travels to ${location.name}`)
     }
-    this.assignTruthToCharacter(character, location.truths, "travel")
+    //this.assignTruthToCharacter(character, location.truths, "travel")
   }
 
   investigate(character, location) {
     if (this.verbose) {
       console.log(`${character.name} investigates ${location.name}`)
     }
-    this.assignTruthToCharacter(character, location.truths, "investigation")
+    //this.assignTruthToCharacter(character, location.truths, "investigation")
   }
 
   wanderOff(character) {
@@ -94,10 +107,13 @@ class Game {
   keepTheTruthGoing(character) {
     if (character.hasEssentialTruth()) {
       console.log(`${character.name} had essential truth`)
-      var replacement = new Character(this, `Character ${this.characters.length+1}`, getRandomFromArray(this.locations), character.truths, true, character.mutate())
+      
+      let name = `${getRandomFromArray(names)} ${getRandomFromArray(names)}`
+
+      var replacement = new Character(this, name, getRandomFromArray(this.locations), character.truths, true, character.mutate())
       
       this.characters.push(replacement)
-      console.log(`${replacement.name} takes his place`)
+      console.log(`${replacement.name} takes their place`)
     }
   }
 
@@ -201,6 +217,10 @@ class Game {
 
     return true
   }
+
+  
+
+
 }
 
 module.exports = {

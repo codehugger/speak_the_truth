@@ -1,8 +1,9 @@
 const Game = require('./Game.js').Game
+const Character = require('./Character.js').Character
 // const Character = require('./Character.js');
 console.log(Game);
 //locations, characters, truths
-var game = new Game(1,5, 5)
+var game = new Game(2,3, 10)
 
 process.argv.forEach(function (val, index, array) {
   if (val === "--verbose") {
@@ -10,6 +11,4 @@ process.argv.forEach(function (val, index, array) {
   }
 });
 
-
 game.simulate()
-// game.printStatus()
