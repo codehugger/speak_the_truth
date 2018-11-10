@@ -111,6 +111,8 @@ class Game {
     this.truths = []
     this.simulationCount = 0
     this.truthSayer = null
+    this.halted = false
+    this.verbose = false
 
     for (var i = 0; i < location_count; i++) {
       var location = new Location(this, `Location ${i+1}`)
@@ -132,30 +134,46 @@ class Game {
   }
 
   talk(character1, character2) {
-    console.log(`${character1.name} talks to ${character2.name}`)
+    if (this.verbose) {
+      console.log(`${character1.name} talks to ${character2.name}`)
+    }
     character1.truths = [...new Set(character1.truths.concat(character2.truths))]
   }
 
   attack(character1, character2) {
-    console.log(`${character1.name} attacks ${character2.name}`)
-    character2.alive = false
-
-    if (character2.hasEssentialTruth()) {
-      console.log(`${character2.name} had essential truth`)
+    if (character1 !== character2) {
+      console.log(`${character1.name} attacks ${character2.name}`)
+      character2.alive = false
+      this.keepTheTruthGoing(character2)
     }
   }
 
   travel(character, location) {
-    console.log(`${character.name} travels to ${location.name}`)
+    if (this.verbose) {
+      console.log(`${character.name} travels to ${location.name}`)
+    }
     character.location = location
   }
 
   wanderOff(character) {
     console.log(`${character.name} has wandered off`)
+    character.alive = false
+    this.keepTheTruthGoing(character)
   }
 
   noop(character) {
-    console.log(`${character.name} does nothing`)
+    if (this.verbose) {
+      console.log(`${character.name} does nothing`)
+    }
+  }
+
+  keepTheTruthGoing(character) {
+    if (character.hasEssentialTruth()) {
+      console.log(`${character.name} had essential truth`)
+      var replacement = new Character(this, `Character ${this.characters.length+1}`, getRandomFromArray(this.locations), character.truths)
+      this.characters.push(replacement)
+      console.log(`${replacement.name} takes his place`)
+    }
   }
 
   simulate() {
@@ -189,8 +207,13 @@ class Game {
   }
 
   simulateStep() {
+    if (this.halted) {
+      console.log(`Simulation halted`)
+      return false
+    }
+
     if (this.truthSayer) {
-      console.log(`The whole truth has been spoken`)
+      console.log(`The whole truth has been spoken after ${this.simulationCount} simulations`)
       return false
     }
 
@@ -206,14 +229,24 @@ class Game {
 
     this.simulationCount += 1
 
-    console.log("Current Status")
+    if (this.verbose) {
+      console.log("Current Status")
+    }
 
     for (var i = 0; i < this.characters.length; i++) {
       var char = this.characters[i]
-      console.log(`${char} is at ${char.location} and knows [${char.truths}]`)
+      if (this.verbose) {
+        if (char.alive) {
+          console.log(`${char} is at ${char.location} and knows [${char.truths}]`)
+        } else {
+          console.log(`${char} is dead`)
+        }
+      }
     }
 
-    console.log(`Simulation #${this.simulationCount}`)
+    if (this.verbose) {
+      console.log(`Simulation #${this.simulationCount}`)
+    }
 
     var shuffled_characters = shuffleArray(this.characters)
 
@@ -234,7 +267,9 @@ class Game {
       }
     }
 
-    console.log("==================================================")
+    if (this.verbose) {
+      console.log("==================================================")
+    }
 
     return true
   }
