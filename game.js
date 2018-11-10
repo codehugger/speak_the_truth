@@ -37,7 +37,7 @@ class Location {
   }
 
   characters() {
-    return game.characters.filter(character => character.location === this)
+    return this.game.characters.filter(character => character.location === this)
   }
 
   toString() {
@@ -80,6 +80,25 @@ class Character {
     }
   }
 
+  hasEssentialTruth() {
+    for (var i = this.truths.length - 1; i >= 0; i--) {
+      var truth = this.truths[i]
+      var found = false
+      for (var j = this.game.characters.length - 1; j >= 0; j--) {
+        var char = this.game.characters[j]
+        if (char.alive && char.truths.includes(truth)) {
+          found = true
+          break
+        }
+      }
+
+      if (!found) {
+        return true
+      }
+    }
+    return false
+  }
+
   toString() {
     return this.name
   }
@@ -120,6 +139,10 @@ class Game {
   attack(character1, character2) {
     console.log(`${character1.name} attacks ${character2.name}`)
     character2.alive = false
+
+    if (character2.hasEssentialTruth()) {
+      console.log(`${character2.name} had essential truth`)
+    }
   }
 
   travel(character, location) {
@@ -137,14 +160,47 @@ class Game {
 
   simulate() {
     while (true) {
-      if (!game.simulateStep()) {
+      if (!this.simulateStep()) {
         break;
+      }
+    }
+  }
+
+  allDead() {
+    var allDead = true
+    for (var i = this.characters.length - 1; i >= 0; i--) {
+      var char = this.characters[i]
+      if (char.alive) {
+        allDead = false
+        break
+      }
+    }
+    return allDead
+  }
+
+  truthLost() {
+    var truths = []
+    for (var i = this.characters.length - 1; i >= 0; i--) {
+      var char = this.characters[i]
+      if (char.hasEssentialTruth()) {
+        return true
       }
     }
   }
 
   simulateStep() {
     if (this.truthSayer) {
+      console.log(`The whole truth has been spoken`)
+      return false
+    }
+
+    if (this.allDead()) {
+      console.log(`Everyone is dead`)
+      return false
+    }
+
+    if (this.truthLost()) {
+      console.log(`A truth has been lost`)
       return false
     }
 
@@ -172,7 +228,7 @@ class Game {
 
       // check if the current character knows everything
       if (currentChar.truths.length == this.truths.length) {
-        console.log(`${currentChar.name} has learned the whole truth`)
+        console.log(`${currentChar.name} speaks the whole truth`)
         this.truthSayer = currentChar
         break
       }
@@ -184,4 +240,8 @@ class Game {
   }
 }
 
-game = new Game()
+module.exports = {
+  Character,
+  Location,
+  Game
+}
