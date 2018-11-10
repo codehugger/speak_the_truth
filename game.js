@@ -1,128 +1,9 @@
-function getRandomInt(max) {
-  return Math.floor(Math.random() * Math.floor(max));
-}
+const Character = require('./Character.js').Character
+const Location = require('./Location.js').Location
 
-function getRandomFromArray(array) {
-  return array[Math.floor(Math.random() * array.length)]
-}
-
-function onlyUnique(value, index, self) {
-  return self.indexOf(value) === index;
-}
-
-function shuffleArray(array) {
-  var new_array = array.slice()
-  var currentIndex = new_array.length;
-  var temporaryValue, randomIndex;
-
-  // While there remain elements to shuffle...
-  while (0 !== currentIndex) {
-    // Pick a remaining element...
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex -= 1;
-
-    // And swap it with the current element.
-    temporaryValue = new_array[currentIndex];
-    new_array[currentIndex] = new_array[randomIndex];
-    new_array[randomIndex] = temporaryValue;
-  }
-
-  return new_array;
-}
-
-class Location {
-  constructor(game, name, truths=[]) {
-    this.game = game
-    this.name = name
-    this.truths = truths
-  }
-
-  characters() {
-    return this.game.characters.filter(character => character.location === this)
-  }
-
-  toString() {
-    return this.name
-  }
-}
-
-class Character {
-  constructor(game, name, location=null, truths=[], alive=true, personality=[]) {
-    this.game = game
-    this.name = name
-    this.location = location
-    this.truths = truths
-    this.alive = alive
-
-    if (personality.length == 4) {
-      this.aggression = personality[0]
-      this.curiosity = personality[1]
-      this.charisma = personality[2]
-      this.intelligence = personality[3]
-    } else {
-      this.aggression = Math.random()
-      this.curiosity = Math.random()
-      this.charisma = Math.random()
-      this.intelligence = Math.random()
-
-      var total = this.aggression + this.curiosity + this.charisma + this.intelligence
-
-      this.aggression = (this.aggression/total)
-      this.curiosity = (this.curiosity/total)
-      this.charisma = (this.charisma/total)
-      this.intelligence = (this.intelligence/total)
-    }
-  }
-
-  perform_action() {
-    if (!this.alive) {
-      return false
-    }
-
-    var action = Math.random() * 0.5
-    var character = getRandomFromArray(this.location.characters())
-    var location = getRandomFromArray(this.game.locations)
-
-    if (action < 0.01) {
-      this.game.wanderOff(this)
-    }
-    else if (action < 0.02) {
-      this.game.attack(this, character)
-    }
-    else if (action < 0.12) {
-      this.game.talk(this, character)
-    }
-    else if (action < 0.22) {
-      this.game.travel(this, location)
-    }
-    else {
-      this.game.noop(this)
-    }
-  }
-
-  hasEssentialTruth() {
-    for (var i = this.truths.length - 1; i >= 0; i--) {
-      var truth = this.truths[i]
-      var found = false
-      for (var j = this.game.characters.length - 1; j >= 0; j--) {
-        var char = this.game.characters[j]
-        if (char.alive && char.truths.includes(truth)) {
-          found = true
-          break
-        }
-      }
-
-      if (!found) {
-        return true
-      }
-    }
-    return false
-  }
-
-  toString() {
-    return `${this.name} (${this.aggression}, ${this.curiosity}, ${this.charisma}, ${this.intelligence})`
-  }
-}
+getRandomFromArray = require('./Util.js').getRandomFromArray;
+shuffleArray = require('./Util.js').shuffleArray;
+getRandomInt = require('./Util.js').getRandomInt;
 
 class Game {
   constructor(location_count=5, character_count=5, truth_count=5) {
@@ -216,20 +97,6 @@ class Game {
     return allDead
   }
 
-  printStatus() {
-    console.log("===== STATE OF THE WORLD =====")
-    for (var i = 0; i < this.characters.length; i++) {
-      var char = this.characters[i]
-      console.log(`- ${char.toString()}`)
-    }
-    console.log("---")
-    for (var i = 0; i < this.locations.length; i++) {
-      var loc = this.locations[i]
-      console.log(`- ${loc.toString()}`)
-    }
-    console.log("==============================")
-  }
-
   truthLost() {
     var truths = []
     for (var i = this.characters.length - 1; i >= 0; i--) {
@@ -310,7 +177,5 @@ class Game {
 }
 
 module.exports = {
-  Character,
-  Location,
   Game
 }
