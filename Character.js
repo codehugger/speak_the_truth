@@ -1,13 +1,19 @@
+const randomGaussian = require('./Util.js').randomGaussian
+
 
 class Character {
-    constructor(game, name, location=null, truths=[], alive=true, personality=[]) {
+    constructor(game, name, location=null, truths=[], alive=true, personality=[], inert=false) {
       this.game = game
       this.name = name
       this.location = location
       this.truths = truths
       this.alive = alive
-  
+      //inert means that this character will not 
+      //try to use his personality to select actions
+      this.inert = inert
+      
       if (personality.length == 4) {
+        this.personality = personality;
         this.aggression = personality[0]
         this.curiosity = personality[1]
         this.charisma = personality[2]
@@ -17,8 +23,19 @@ class Character {
         this.curiosity = Math.random()
         this.charisma = Math.random()
         this.intelligence = Math.random()
+        
+        this.personality = [
+            this.aggression,
+            this.curiosity,
+            this.charisma,
+            this.intelligence
+        ]
+
       }
-  
+      
+      let sum = this.personality.reduce((x, y)=>x+y)
+      this.personality = this.personality.map(x=>x/sum);
+
       // aggression + curiosity + charisma + intelligence == 1
       var total = this.aggression + this.curiosity + this.charisma + this.intelligence
       this.aggression = (this.aggression/total)
@@ -60,6 +77,28 @@ class Character {
       else if (action < 1.0) {
         this.game.investigate(this, this.location)
       }
+    }
+
+    /**
+     * Returns a normalized vector similar but not equivalent
+     * to this characters vector.
+     */
+    mutate(){
+        let newPersonality = []
+        let std = 0.5 
+        this.personality.forEach(p => {
+            newPersonality.push(
+
+                Math.max(0, Math.min(1, randomGaussian(p, std)))
+
+            )
+        });
+        console.log(`${this.name} Has been mutated!
+                    ${this.personality}
+                    ${newPersonality}`);
+
+
+        return newPersonality;
     }
   
     hasEssentialTruth() {

@@ -94,7 +94,8 @@ class Game {
   keepTheTruthGoing(character) {
     if (character.hasEssentialTruth()) {
       console.log(`${character.name} had essential truth`)
-      var replacement = new Character(this, `Character ${this.characters.length+1}`, getRandomFromArray(this.locations), character.truths)
+      var replacement = new Character(this, `Character ${this.characters.length+1}`, getRandomFromArray(this.locations), character.truths, true, character.mutate())
+      
       this.characters.push(replacement)
       console.log(`${replacement.name} takes his place`)
     }
