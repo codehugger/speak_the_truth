@@ -223,35 +223,64 @@ class Game {
     //only characters that are alive may speak truths.
     let chars = this.characters.filter(x=>x.alive)
     
-    //for every truth
-    for(var i = 0; i < this.truths.length; i++){ 
-
-      const truth = this.truths[i]
-
-      let found =false;
-      //loop through characters and find truth that is true. 
-      for(var j = 0 ; j < chars.length ; j++){
+    try {
+      this.truths.forEach(truth => {
+        let found = false;
         
-        let c_truth = chars[j].truths[truth.index]
-        //if the truth not there then it can't be true
-        if(!c_truth){
-          continue;
-        }
-        //we already know that the index is equal. if the value is the same then great.
-        if(c_truth.truth.value === truth.value){
-          found = true;
-          break;
-        }
+        chars.forEach(char=>{
+          if(found){ return; }
+          
+          let c_truth =  char.truths.map(x=>x.truth)[truth.index];
+          
+          if(!c_truth){
+            return
+          }
 
-      }
-      //if we haven't found a truth in any character, kill the simulation.
-      if(!found){
-        return true
-      }
+          if(c_truth === truth ){
+            found = true;
+            return;
+          }
 
+        });
+        
+        if(!found){
+          throw -1; 
+        }
+      });
+    } catch(e){
+      return true;
     }
-    //we got through and found all truths in all characters.
     return false;
+
+    // //for every truth
+    // for(var i = 0; i < this.truths.length; i++){ 
+
+    //   const truth = this.truths[i]
+
+    //   let found =false;
+    //   //loop through characters and find truth that is true. 
+    //   for(var j = 0 ; j < chars.length ; j++){
+        
+    //     let c_truth = chars[j].truths[truth.index]
+    //     //if the truth not there then it can't be true
+    //     if(!c_truth){
+    //       continue;
+    //     }
+    //     //we already know that the index is equal. if the value is the same then great.
+    //     if(c_truth.truth.value === truth.value){
+    //       found = true;
+    //       break;
+    //     }
+
+    //   }
+    //   //if we haven't found a truth in any character, kill the simulation.
+    //   if(!found){
+    //     return true
+    //   }
+
+    // }
+    // //we got through and found all truths in all characters.
+    // return false;
   }
 
 
