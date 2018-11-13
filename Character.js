@@ -102,32 +102,22 @@ class Character {
       }
 
       else if (action < 0.01) {
-        console.log("wandering off ");
-        
         this.game.wanderOff(this)
       }
       // controlled by aggression
-      else if (character && action < (this.aggression())) {
-          
-        console.log("attacking ");
+      else if (character &&  (action < (this.aggression())) ) {
         this.game.attack(this, character)
       }
       // controlled by charisma
-      else if (character && action < (this.aggression() + this.charisma())) {
-          
-        console.log("talking ");
+      else if (character && (action < (this.aggression() + this.charisma())) ) {
         this.game.talk(this, character)
       }
       // controlled by curiosity
-      else if ( location && action < (this.aggression() + this.charisma() + this.curiosity()) ) {
-          
-        console.log("travelling ");
+      else if ( location && (action < (this.aggression() + this.charisma() + this.curiosity())) ) {
         this.game.travel(this, location)
       }
       // controlled by intelligence
       else if (action < 1.0) {
-          
-        console.log("Ivestingation ");
         this.game.investigate(this, this.location)
       }
       
@@ -175,33 +165,25 @@ class Character {
 
         let true_truths = this.truths.filter(x=>x.probability===1.0).map(x=>x.truth);//.filter(x=> x.probability === 1).map(x=>x.truth);
         //get other characters.
-        let others = this.game.characters.filter(x=> (x.name !== this.name) )
+        let others = this.game.characters.filter(x=> (x.name !== this.name && x.alive) )
 
         let other_char_truths = [];
-
-        for(var i = 0; i < others.length ; i++){
-            const c = others[i];
-            
-            //find true truths that this character has.
-            let t = c.truths.filter(x => (x.probability === 1.0) );
-            t = t.map( x => x.truth )
-            //
-            while(t.length != 0 ){
-                let el = t.pop();
-
-                if(typeof(el) === 'undefined'){
-                    continue;
-                }
-
-                if( typeof(other_char_truths[el.index]) === 'undefined'){
-                    other_char_truths[el.index] = el;
+        
+    
+        others.forEach(other=>{
+            let t = other.truths.map(x=>x.truth);
+            while(t.length != 0){
+                
+                let c_truth = t.pop();
+                if(typeof(c_truth) === 'undefined'){
+                    return;
+                } 
+                if(typeof(other_char_truths[c_truth.index]) === 'undefined'){
+                    other_char_truths[c_truth.index] = c_truth;
                 }
 
             }
-
-        }
-        console.log(true_truths);
-        console.log(other_char_truths);
+        });
         
         //loop through the truths this character knows, 
         for (let i = 0; i < true_truths.length; i++) {
@@ -216,58 +198,7 @@ class Character {
         }
 
         return false;
-        
-
-        /*
-        for (let i = 0; i < true_truths.length; i++) {
-            const t = true_truths[i];
-            found = false;
-
-            //check for others.
-            for (let j = 0; j < others.length; j++) {
-                const character = others[j];
-                let character_truths = character.truths.filter(x=>x.probability === 1).map(x=>x.truth);
-
-                //loop through character true_truths.
-                for(var n = 0; n < character_truths.length; n++){
-                    if(character_truths[n] === t){
-                        found = true;
-                        continue;
-                    }
-                }
-
-                if(found){
-                    break;
-                }
-                
-
-            }
-
-            if(!found){
-                return true
-            }
-            
-        }
-        return false;
-        */
-        /*
-      for (var i = this.truths.length - 1; i >= 0; i--) {
-        var truth = this.truths[i]
-        var found = false
-        for (var j = this.game.characters.length - 1; j >= 0; j--) {
-          var char = this.game.characters[j]
-          if (char.alive && char.truths.includes(truth)) {
-            found = true
-            break
-          }
-        }
-  
-        if (!found) {
-          return true
-        }
-      }
-      return false
-      */
+       
     }
     toString() {
       return `${this.name} (${this.personality.map(x=>x.toFixed(2))})`

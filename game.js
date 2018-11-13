@@ -142,16 +142,7 @@ class Game {
     character.receiveTruths(truths, from);
 
     console.log(`${character.name} has learned a new truth through ${context}`)
-    console.log(character.truths)
-    // if (Math.random() < 0.5) { 
-    //   var beforeTruthCount = character.truths.length
-    //   character.truths = [...new Set(character.truths.concat(truths))]
-    //   var afterTruthCount = character.truths.length
     
-    //   if (afterTruthCount > beforeTruthCount) {
-      //   }
-    // }
-
   }
 
 
@@ -169,7 +160,6 @@ class Game {
       var replacement = new Character(this, name, getRandomFromArray(this.locations), [], true, character.mutate(), false)
 
       let c_true_truths = character.truths.filter(x=>x.probability === 1).map(x=>x.truth);
-      console.log(c_true_truths);
       
       for (let i = 0; i < c_true_truths.length; i++) {
         const element = c_true_truths[i];
