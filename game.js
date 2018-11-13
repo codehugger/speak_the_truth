@@ -44,7 +44,8 @@ class Game {
 
     for (var i = 0; i < truth_count; i++) {
 
-      let truth = new Truth(i, Math.random()+5*Math.random()+7*Math.random()); 
+      let foo = (Math.random() > 0.5)? true: false;
+      let truth = new Truth(i, foo)//(Math.random()+5*Math.random()+7*Math.random()).toPrecision(3)); 
 
       this.truths.push(truth)
 
@@ -71,13 +72,15 @@ class Game {
     let val = Math.random();
 
     if(val > probability_to_propogate_truth){
-      this.assignTruthToCharacter(character1, character2.truths, "conversation", character2)
+      console.log(`${character2.name} tells ${character1.name} everything.`);
+      
+      this.assignTruthToCharacter(character1, character2.truths.map(x=>x.truth), "conversation", character2)
     } 
     else {
 
       if(val < probability_to_propogate_truth / 4){
         console.log(`${character2.name} hates ${character1.name} enough to lie to them.`);
-        this.assignTruthToCharacter(character1, character2.truths.map(x=>x.value = randomGaussian(x.value, 1)), "lie", character2)
+        //this.assignTruthToCharacter(character1, character2.truths.map(x=>x.value = randomGaussian(x.value, 1)), "lie", character2)
       } else {
         console.log(`${character2.name} Does not like ${character1.name} enough to tell them anything.`);
       }
@@ -85,13 +88,20 @@ class Game {
 
   }
 
+  /**
+   * One character attacks the other.
+   * @param {Attacker} character1 
+   * @param {Attackee} character2 
+   */
   attack(character1, character2) {
+
     if (character1 !== character2) {
       console.log(`${character1.name} attacks ${character2.name}`)
       character2.alive = false
       this.keepTheTruthGoing(character2)
     }
-    this.assignTruthToCharacter(character1, character2.truths, "attack", character2)
+
+    this.assignTruthToCharacter(character1, character2.truths.map(x=>x.truth), "attack", character2)
   }
 
   travel(character, location) {
@@ -125,9 +135,8 @@ class Game {
     character.receiveTruths(truths, from);
 
     console.log(`${character.name} has learned a new truth through ${context}`)
-    
-    
-    // if (Math.random() < 0.5) {
+    console.log(character.truths)
+    // if (Math.random() < 0.5) { 
     //   var beforeTruthCount = character.truths.length
     //   character.truths = [...new Set(character.truths.concat(truths))]
     //   var afterTruthCount = character.truths.length
@@ -138,21 +147,29 @@ class Game {
 
   }
 
+
+  /**
+   * Detects if character has a truth that is neccesary to keep the world going.
+   * @param {character that's been killed} character 
+   */
   keepTheTruthGoing(character) {
 
     if (character.hasEssentialTruth()) {
       console.log(`${character.name} had essential truth`)
       
       let name = `${getRandomFromArray(names)} ${getRandomFromArray(names)}`
-
-      var replacement = new Character(this, name, getRandomFromArray(this.locations), undefined, true, character.mutate())
+      //create a new character.
+      var replacement = new Character(this, name, getRandomFromArray(this.locations), [], true, character.mutate(), false)
 
       let c_true_truths = character.truths.filter(x=>x.probability === 1).map(x=>x.truth);
-      c_true_truths.forEach(element => {
-        replacement.setTruth(element)
-      });
       console.log(c_true_truths);
       
+      for (let i = 0; i < c_true_truths.length; i++) {
+        const element = c_true_truths[i];
+        if(element)
+          replacement.setTruth(element)
+      }
+
       this.characters.push(replacement)
       console.log(`${replacement.name} takes their place`)
     } 
@@ -197,34 +214,47 @@ class Game {
     console.log("==============================")
   }
 
+
   /**
    * Returns true if there is any truth that no alive character knows.
    */
   truthLost() {
-    
+
+    //only characters that are alive may speak truths.
     let chars = this.characters.filter(x=>x.alive)
-
+    
+    //for every truth
     for(var i = 0; i < this.truths.length; i++){ 
-      const truth = this.truths[i]
-      let found =false;
 
+      const truth = this.truths[i]
+
+      let found =false;
+      //loop through characters and find truth that is true. 
       for(var j = 0 ; j < chars.length ; j++){
+        
         let c_truth = chars[j].truths[truth.index]
+        //if the truth not there then it can't be true
         if(!c_truth){
           continue;
         }
-        if(chars[j].truths[truth.index].truth === truth){
+        //we already know that the index is equal. if the value is the same then great.
+        if(c_truth.truth.value === truth.value){
           found = true;
+          break;
         }
-      }
 
+      }
+      //if we haven't found a truth in any character, kill the simulation.
       if(!found){
         return true
       }
-    }
 
+    }
+    //we got through and found all truths in all characters.
     return false;
   }
+
+
 
   simulateStep() {
     if (this.halted) {
@@ -243,7 +273,7 @@ class Game {
     }
 
     if (this.truthLost()) {
-      console.log(`A truth has been lost`)
+      console.log(`A truth has been lost after ${this.simulationCount} steps`)
       return false
     }
 

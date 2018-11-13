@@ -16,7 +16,8 @@ class Character {
       this.name = name
       this.location = location
       //a newborn character will believe anything told to him 100%
-      this.truths = truths.map(x=>new Beleif(x, 1));
+    
+      this.truths = truths.map(x=>new Beleif(x, 1.0));
       this.alive = alive
       //inert means that this character will not 
       //try to use his personality to select actions
@@ -140,22 +141,11 @@ class Character {
         // if the characters intelligence is low, he will more probably beleive lies from bad people.
         //to-do
 
-        truths.forEach(x=>{ 
-            if(typeof(this.truths[x.index]) === 'undefined' ) {
-                this.truths[x.index] = new Beleif(x, 1);
-            } 
-            else { 
-
-                if(this.truths[x.index].probability == 1){
-                    //he is unshake-able in his beleif. 
-                } else {
-                    //use the probability of lie to evaluate if this is a better truth. TODO!
-                    this.truths[x.index] = new Beleif(x, 1);
-                }
-
-            }
-        });
-
+        for (let i = 0; i < truths.length; i++) {
+            const element = truths[i];
+            if(element)
+                this.truths[element.index] = new Beleif(element, 1.0);
+        }
     }
 
     /**
@@ -163,8 +153,8 @@ class Character {
      */
     hasEssentialTruth() {
         
-        //if our model makes sense, then this guy will have some truths of probability 1, these can only be gotten from the game itslef.
-        let true_truths = this.truths.filter(x=> x.probability === 1).map(x=>x.truth);
+
+        let true_truths = this.truths.filter(x=>x.probability===1.0).map(x=>x.truth);//.filter(x=> x.probability === 1).map(x=>x.truth);
         //get other characters.
         let others = this.game.characters.filter(x=> (x.name !== this.name) )
 
@@ -191,9 +181,12 @@ class Character {
             }
 
         }
-
+        console.log(true_truths);
+        console.log(other_char_truths);
+        
         //loop through the truths this character knows, 
         for (let i = 0; i < true_truths.length; i++) {
+            
             const element = true_truths[i];
             //find a true truth
             if(other_char_truths[element.index] !== element){
