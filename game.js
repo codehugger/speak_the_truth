@@ -1,5 +1,8 @@
 const names = require('./Names.js').names
 
+const rfunctions = require('./Names.js').room_functions
+const rtypes = require('./Names.js').room_types
+
 const Character = require('./Character.js').Character
 const Location = require('./Location.js').Location
 
@@ -30,7 +33,11 @@ class Game {
     this.verbose = false
 
     for (var i = 0; i < location_count; i++) {
-      var location = new Location(this, `Location ${i+1}`)
+      let locationName = `${getRandomFromArray(rfunctions)} ${getRandomFromArray(rtypes)}`
+      if( this.locations.filter(x=>x.name === locationName).length !== 0 ){
+        locationName = `${getRandomFromArray(rfunctions)} and ${getRandomFromArray(rfunctions)} ${getRandomFromArray(rtypes)}`
+      }
+      var location = new Location(this, locationName)
       this.locations.push(location)
     }
 
