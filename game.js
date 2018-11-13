@@ -147,6 +147,7 @@ class Game {
                 character.location = location
                 console.log(`${character.name} goes to the ${location.name} and learns ${truthsBefore < truthsAfter ? newTruth.toString() : "nothing new"}`);
             }
+
         }
     }
 
