@@ -166,12 +166,20 @@ class Game {
       
       for (let i = 0; i < c_true_truths.length; i++) {
         const element = c_true_truths[i];
-        if(element)
+        if(element){
           replacement.setTruth(element)
+        }
       }
 
       this.characters.push(replacement)
       console.log(`${replacement.name} takes their place`)
+
+      if(this.truthLost()){
+        console.log(`${character.name} appearantly fucked something up...`);
+        console.log(`${character.truths}\n${replacement.truths}`);
+      
+      }
+
     } 
     
   }
@@ -252,35 +260,6 @@ class Game {
     }
     return false;
 
-    // //for every truth
-    // for(var i = 0; i < this.truths.length; i++){ 
-
-    //   const truth = this.truths[i]
-
-    //   let found =false;
-    //   //loop through characters and find truth that is true. 
-    //   for(var j = 0 ; j < chars.length ; j++){
-        
-    //     let c_truth = chars[j].truths[truth.index]
-    //     //if the truth not there then it can't be true
-    //     if(!c_truth){
-    //       continue;
-    //     }
-    //     //we already know that the index is equal. if the value is the same then great.
-    //     if(c_truth.truth.value === truth.value){
-    //       found = true;
-    //       break;
-    //     }
-
-    //   }
-    //   //if we haven't found a truth in any character, kill the simulation.
-    //   if(!found){
-    //     return true
-    //   }
-
-    // }
-    // //we got through and found all truths in all characters.
-    // return false;
   }
 
 
@@ -322,7 +301,11 @@ class Game {
       }
 
       currentChar.perform_action()
-
+      
+      if(this.truthLost()){
+        console.log('weeeeelll fuck');
+        throw -1; 
+      }
       // check if the current character knows everything
 
       let everythingCorrect = true;
@@ -348,6 +331,7 @@ class Game {
         break
       }
     }
+
 
     if (this.verbose) {
       console.log("==================================================")

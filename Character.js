@@ -43,7 +43,19 @@ class Character {
       this.personality = this.personality.map(x=>x/sum);
 
     }
-
+    
+    aggression(){
+        return this.personality[0];
+    }
+    charisma(){
+        return this.personality[1];
+    }
+    curiosity(){
+        return this.personality[2];
+    }
+    intelligence(){
+        return this.personality[3];
+    }
     /**
      * Sets a truth with 100% certainty.
      */
@@ -78,39 +90,46 @@ class Character {
   
       var noop = Math.random()
       var action = Math.random()
+
       var character = getRandomFromArray(this.location.characters().filter(x=> (x.name !== this.name)&& x.alive ))
       var location = getRandomFromArray(this.game.locations.filter(x=>x.name !== this.location.name))
       
-      let actions = [];
-
-      if(typeof(character) !== 'undefined'){
-          actions.push(this.game.attack.bind(this.game, this, character))
-          actions.push(this.game.talk.bind(this.game, this, character))
-          
-          if( this.similarity(character) < 0.1 ){
-            console.log(`${this.name} hates ${character.name}!`);
-            this.game.attack(this, character);
-            return;
-          }
-
-      }
-      if(typeof(location) !== 'undefined'){
-          actions.push(this.game.travel.bind(this.game, this, location))
-      }
-      actions.push(this.game.investigate.bind(this.game, this, this.location))
+    //   console.log(character.name, location.name);
       
+
       if (noop < 0.5) {
         this.game.noop(this)
       }
+
       else if (action < 0.01) {
+        console.log("wandering off ");
+        
         this.game.wanderOff(this)
       }
-
-
-        
-      let a = getRandomFromArray(actions);
-      a();
-
+      // controlled by aggression
+      else if (character && action < (this.aggression())) {
+          
+        console.log("attacking ");
+        this.game.attack(this, character)
+      }
+      // controlled by charisma
+      else if (character && action < (this.aggression() + this.charisma())) {
+          
+        console.log("talking ");
+        this.game.talk(this, character)
+      }
+      // controlled by curiosity
+      else if ( location && action < (this.aggression() + this.charisma() + this.curiosity()) ) {
+          
+        console.log("travelling ");
+        this.game.travel(this, location)
+      }
+      // controlled by intelligence
+      else if (action < 1.0) {
+          
+        console.log("Ivestingation ");
+        this.game.investigate(this, this.location)
+      }
       
     }
 
