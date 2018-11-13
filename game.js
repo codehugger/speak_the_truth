@@ -85,7 +85,7 @@ class Game {
 
     /**
      * Checks if the given character knows the whole truth
-     * 
+     *
      * @param {Character} character the character to check
      */
     knowsTheWholeTruth(character) {
@@ -101,14 +101,14 @@ class Game {
      * @param {Character} character2 victim
      */
     attack(character1, character2) {
-        // if (character1 !== character2) {
-        //     let truthsBefore = character1.truths.length
-        //     let newTruth = character2.truths.sample()
-        //     character1.learnTruth(newTruth)
-        //     let truthsAfter = character1.truths.length
-        //     character2.die()
-        //     console.log(`${character1.name} attacks ${character2.name} and learns ${truthsBefore < truthsAfter ? newTruth.toString() : "nothing new"}`);
-        // }
+        if (character1 !== character2) {
+            let truthsBefore = character1.truths.length
+            let newTruth = character2.truths.sample()
+            character1.learnTruth(newTruth)
+            let truthsAfter = character1.truths.length
+            character2.die()
+            console.log(`${character1.name} attacks ${character2.name} and learns ${truthsBefore < truthsAfter ? `the truth about "${newTruth.name}"` : "nothing new"}`);
+        }
     }
 
     /**
@@ -124,7 +124,7 @@ class Game {
                 if (newTruth) {
                     character1.learnTruth(newTruth)
                     let truthsAfter = character1.truths.length
-                    console.log(`${character1.name} talks to ${character2.name} and learns ${truthsBefore < truthsAfter ? newTruth.toString() : "nothing new"}`);
+                    console.log(`${character1.name} talks to ${character2.name} and learns ${truthsBefore < truthsAfter ? `the truth about "${newTruth.name}"` : "nothing new"}`);
                 }
             } else {
                 console.log(`${character1.name} does not like ${character2.name} enough to learn anything from conversation`)
@@ -145,7 +145,7 @@ class Game {
                 character.learnTruth(newTruth)
                 let truthsAfter = character.truths.length
                 character.location = location
-                console.log(`${character.name} goes to the ${location.name} and learns ${truthsBefore < truthsAfter ? newTruth.toString() : "nothing new"}`);
+                console.log(`${character.name} goes to the ${location.name} and learns ${truthsBefore < truthsAfter ? `the truth about "${newTruth.name}"` : "nothing new"}`);
             }
 
         }
@@ -160,7 +160,7 @@ class Game {
             let newTruth = location.truths.sample()
             character.learnTruth(newTruth)
             let truthsAfter = character.truths.count
-            console.log(`${character.name} investigates ${location.name} and learns ${truthsBefore < truthsAfter ? "something new" : "nothing new"}`);
+            console.log(`${character.name} investigates ${location.name} and learns ${truthsBefore < truthsAfter ? `the truth about "${newTruth.name}"` : "nothing new"}`);
         }
     }
 
@@ -177,11 +177,17 @@ class Game {
      */
     canStep() {
         // Does somebody know the whole truth?
-        if (this.characters.filter(x => this.knowsTheWholeTruth(x)).length > 0) { return false }
-        
+        for (let index = 0; index < this.characters.length; index++) {
+            const character = this.characters[index];
+            if (this.knowsTheWholeTruth(character)) {
+                console.log(`${character.name} has learned the whole truth!`)
+                return false
+            }
+        }
+
         // Has a truth been lost?
         if (this.truthLost()) { console.log(`A truth has been lost!`); return false }
-        
+
         // Is everybody dead?
         if (this.characters.filter(x => x.alive) == 0) { console.log(`Everybody is dead!`); return false }
 
@@ -200,7 +206,7 @@ class Game {
         let charactersForStep = this.characters.shuffle()
         for (let index = 0; index < charactersForStep.length; index++) {
             const character = charactersForStep[index];
-            
+
             // Allow a character to perform one action
             character.performAction()
 
@@ -214,21 +220,22 @@ class Game {
      */
     run() {
         this.printStateOfTheWorld()
-        console.log("Running simulation...")
         while (this.canStep() && this.stepCount < 200) {
             this.stepCount += 1
-            console.log(`Running step ${this.stepCount}`)
+            console.log(`Round ${this.stepCount}`)
+            console.log(`===============================`)
             this.step()
+            console.log(`-------------------------------`)
         }
         this.printStateOfTheWorld()
     }
 
     printStateOfTheWorld() {
-        console.log("===== THE WORLD =====")
+        console.log("========== THE WORLD ==========")
         console.log(`The whole truth: [${this.truths.map(x => `"${x.name}"`).join(",")}]`)
         this.locations.forEach(x => console.log(x.toString()))
         this.characters.forEach(x => console.log(x.toString()))
-        console.log("=====================")
+        console.log("===============================")
     }
 }
 
