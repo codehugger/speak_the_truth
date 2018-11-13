@@ -16,32 +16,34 @@ class Character {
       this.name = name
       this.location = location
       //a newborn character will believe anything told to him 100%
-    
+      
       this.truths = truths.map(x=>new Beleif(x, 1.0));
       this.alive = alive
       //inert means that this character will not 
       //try to use his personality to select actions
       this.inert = inert
+        
       
       if (personality.length == 4) {
-        this.personality = personality;
-
-      } else {
-       
-        this.personality = [
-            Math.random(), 
-            Math.random(),
-            Math.random(),
-            Math.random()
-        ]
-
-      }
-
-      //Personality = [Agression, Charisma, Curiosity, Intelligence]
-      
+          this.personality = personality;
+          
+        } else {
+            
+            this.personality = [
+                Math.random(), 
+                Math.random(),
+                Math.random(),
+                Math.random()
+            ]
+            
+        }
+        
+        //Personality = [Agression, Charisma, Curiosity, Intelligence]
+        
       let sum = this.personality.reduce((x, y)=>x+y)
       this.personality = this.personality.map(x=>x/sum);
-
+      this.pastActions = [];
+      this.memory = 5// + Math.ceil(this.intelligence() * 10);
     }
     
     aggression(){
@@ -96,6 +98,15 @@ class Character {
       
     //   console.log(character.name, location.name);
       
+      //make it less likely that a character repeats the same actions again and again.
+      let past_attacks = 0, past_travels = 0, past_talks =0, past_investigations=0; 
+      if(this.pastActions.length != 0){
+        let past_attacks = this.pastActions.filter(x=>x==='attack').length / this.pastActions.length;
+        let past_travels = this.pastActions.filter(x=>x==='travel').length / this.pastActions.length;
+        let past_talks = this.pastActions.filter(x=>x==='talk').length / this.pastActions.length;
+        let past_investigations = this.pastActions.filter(x=>x==='investigate').length / this.pastActions.length;
+      }
+      // all the pastActions are now 0 to 1, 
 
       if (noop < 0.5) {
         this.game.noop(this)
@@ -105,19 +116,23 @@ class Character {
         this.game.wanderOff(this)
       }
       // controlled by aggression
-      else if (character &&  (action < (this.aggression())) ) {
+      else if (character &&  ((action +(past_attacks/2)) < (this.aggression())) ) {
+        this.remember_action('attack')
         this.game.attack(this, character)
       }
       // controlled by charisma
-      else if (character && (action < (this.aggression() + this.charisma())) ) {
+      else if (character && ( (action +(past_talks/2)) < (this.aggression() + this.charisma()  )) ) {
+        this.remember_action('talk')
         this.game.talk(this, character)
       }
       // controlled by curiosity
-      else if ( location && (action < (this.aggression() + this.charisma() + this.curiosity())) ) {
+      else if ( location && ( (action +(past_travels/2) ) < (this.aggression() + this.charisma() + this.curiosity())) ) {
+        this.remember_action('travel')
         this.game.travel(this, location)
       }
       // controlled by intelligence
       else if (action < 1.0) {
+        this.remember_action('investigate')
         this.game.investigate(this, this.location)
       }
       
@@ -157,6 +172,12 @@ class Character {
         }
     }
 
+    remember_action(action){
+        this.pastActions.push(action);
+        if(this.pastActions.length > this.memory){
+            this.pastActions = this.pastActions.slice(this.pastActions.length-1, 1);
+        }
+    }
     /**
      * Determines if this character holds a certain truth that no other character holds. 
      */
