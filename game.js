@@ -1,350 +1,234 @@
-const names = require('./Names.js').names
+const Character = require('./character.js').Character
+const Location = require('./location.js').Location
+const Weapon = require('./weapon.js').Weapon
+const Truth = require('./truth.js').Truth
 
-const Character = require('./Character.js').Character
-const Location = require('./Location.js').Location
-
-const randomGaussian = require('./Util.js').randomGaussian
-
-getRandomFromArray = require('./Util.js').getRandomFromArray;
-shuffleArray = require('./Util.js').shuffleArray;
-getRandomInt = require('./Util.js').getRandomInt;
-
-class Truth {
-  constructor(index, value){
-    this.index = index
-    this.value = value
-  }
-  toString(){
-    return `{${this.index},${this.value}}`
-  }
-}
+require('./utils.js')
 
 class Game {
-  constructor(location_count=5, character_count=5, truth_count=5) {
-    this.locations = []
-    this.characters = []
-    this.truths = []
-    this.simulationCount = 0
-    this.truthSayer = null
-    this.halted = false
-    this.verbose = false
+    constructor(location_count=5, character_count=5, truth_count=5, weapon_count=5) {
+        // Init
+        this.characters = []
+        this.locations = []
+        this.weapons = []
+        this.truths = []
+        this.stepCount = 0
 
-    for (var i = 0; i < location_count; i++) {
-      var location = new Location(this, `Location ${i+1}`)
-      this.locations.push(location)
-    }
-
-    for (var i = 0; i < character_count; i++) {
-
-      let name = `${getRandomFromArray(names)} ${getRandomFromArray(names)}`
-
-      var character = new Character(this, name, getRandomFromArray(this.locations))
-      this.characters.push(character)
-    }
-
-    for (var i = 0; i < truth_count; i++) {
-
-      let foo = (Math.random() > 0.5)? true: false;
-      let truth = new Truth(i, foo)//(Math.random()+5*Math.random()+7*Math.random()).toPrecision(3)); 
-
-      this.truths.push(truth)
-
-      // hand out the truth
-      var character = getRandomFromArray(this.characters)
-      character.setTruth(truth)
-      
-      //locations will only sometimes have truths. 
-      if(Math.random() > 0.5){
-        var location = getRandomFromArray(this.locations)
-        location.truths[i] = truth
-      }
-
-    }
-  }
-
-  talk(character1, character2) {
-    if (this.verbose) {
-      console.log(`${character1.name} talks to ${character2.name}`)
-    }
-
-    let probability_to_propogate_truth = 1-character1.similarity(character2) ;
-
-    let val = Math.random();
-
-    if(val > probability_to_propogate_truth){
-      console.log(`${character2.name} tells ${character1.name} everything.`);
-      
-      this.assignTruthToCharacter(character1, character2.truths.map(x=>x.truth), "conversation", character2)
-    } 
-    else {
-
-      if(val < probability_to_propogate_truth / 4){
-        console.log(`${character2.name} hates ${character1.name} enough to lie to them.`);
-        //this.assignTruthToCharacter(character1, character2.truths.map(x=>x.value = randomGaussian(x.value, 1)), "lie", character2)
-      } else {
-        console.log(`${character2.name} Does not like ${character1.name} enough to tell them anything.`);
-      }
-    }
-
-  }
-
-  /**
-   * One character attacks the other.
-   * @param {Attacker} character1 
-   * @param {Attackee} character2 
-   */
-  attack(character1, character2) {
-
-    if (character1 !== character2) {
-      console.log(`${character1.name} attacks ${character2.name}`)
-      character2.alive = false
-      this.keepTheTruthGoing(character2)
-    }
-
-    this.assignTruthToCharacter(character1, character2.truths.map(x=>x.truth), "attack", character2)
-  }
-
-  travel(character, location) {
-    if (this.verbose) {
-      console.log(`${character.name} travels to ${location.name}`)
-    }
-    //this.assignTruthToCharacter(character, location.truths, "travel")
-  }
-
-  investigate(character, location) {
-    if (this.verbose) {
-      console.log(`${character.name} investigates ${location.name}`)
-    }
-    //this.assignTruthToCharacter(character, location.truths, "investigation")
-  }
-
-  wanderOff(character) {
-    console.log(`${character.name} has wandered off`)
-    character.alive = false
-    this.keepTheTruthGoing(character)
-  }
-
-  noop(character) {
-    if (this.verbose) {
-      console.log(`${character.name} does nothing`)
-    }
-  }
-
-  assignTruthToCharacter(character, truths, context, from) {
-
-    character.receiveTruths(truths, from);
-
-    console.log(`${character.name} has learned a new truth through ${context}`)
-    console.log(character.truths)
-    // if (Math.random() < 0.5) { 
-    //   var beforeTruthCount = character.truths.length
-    //   character.truths = [...new Set(character.truths.concat(truths))]
-    //   var afterTruthCount = character.truths.length
-    
-    //   if (afterTruthCount > beforeTruthCount) {
-      //   }
-    // }
-
-  }
-
-
-  /**
-   * Detects if character has a truth that is neccesary to keep the world going.
-   * @param {character that's been killed} character 
-   */
-  keepTheTruthGoing(character) {
-
-    if (character.hasEssentialTruth()) {
-      console.log(`${character.name} had essential truth`)
-      
-      let name = `${getRandomFromArray(names)} ${getRandomFromArray(names)}`
-      //create a new character.
-      var replacement = new Character(this, name, getRandomFromArray(this.locations), [], true, character.mutate(), false)
-
-      let c_true_truths = character.truths.filter(x=>x.probability === 1).map(x=>x.truth);
-      console.log(c_true_truths);
-      
-      for (let i = 0; i < c_true_truths.length; i++) {
-        const element = c_true_truths[i];
-        if(element){
-          replacement.setTruth(element)
+        // Generate locations
+        for (let i = 0; i < location_count; i++) {
+            this.characters.push(new Character(this))
         }
-      }
 
-      this.characters.push(replacement)
-      console.log(`${replacement.name} takes their place`)
+        // Generate characters
+        for (let i = 0; i < character_count; i++) {
+            this.locations.push(new Location(this))
+        }
 
-      if(this.truthLost()){
-        console.log(`${character.name} appearantly fucked something up...`);
-        console.log(`${character.truths}\n${replacement.truths}`);
-      
-      }
+        // Generate weapons
+        for (let i = 0; i < weapon_count; i++) {
+            this.weapons.push(new Weapon(this))
+        }
 
-    } 
-    
-  }
+        // Generate truths
+        for (let i = 0; i < truth_count; i++) {
+            this.truths.push(new Truth(this))
+        }
 
-  simulate() {
-    this.printStatus()
-
-    while (true) {
-      if (!this.simulateStep()) {
-        break;
-      }
+        this.reset()
     }
-  }
 
-  allDead() {
-    var allDead = true
-    for (var i = this.characters.length - 1; i >= 0; i--) {
-      var char = this.characters[i]
-      if (char.alive) {
-        allDead = false
-        break
-      }
+    /**
+     * Reset the simulation
+     */
+    reset() {
+        // Reset the step counter
+        this.stepCount = 0
+
+        // Reset locations and characters
+        this.characters.forEach(x => x.reset())
+        this.locations.forEach(x => x.reset())
+
+        // Assign characters to random locations
+        this.characters.forEach(x => x.location = this.locations.sample())
+
+        // Assign truths randomly to characters and locations
+        for (let index = 0; index < this.truths.length; index++) {
+            const truth = this.truths[index]
+            const prob = Math.random()
+
+            // Assign truth to character or location with probability 0.5
+            if (prob < 0.5) {
+                this.locations.sample().learnTruth(truth)
+            } else {
+                this.characters.sample().learnTruth(truth)
+            }
+        }
     }
-    return allDead
-  }
 
-  printStatus() {
-    console.log("===== STATE OF THE WORLD =====")
-    for (var i = 0; i < this.characters.length; i++) {
-      var char = this.characters[i]
-      console.log(`- ${char.toString()}`)
-      console.log(`  - knows: ${char.truths}`)
+    /**
+     * Check if a truth has been lost
+     */
+    truthLost() {
+        var self = this
+        this.truths.forEach(function(x) {
+            var found = false
+            self.locations.forEach(function(location) {
+                if (location.hasTruth(x)) { found = true; return }
+            })
+            self.characters.forEach(function(character) {
+                if (character.hasTruth(x)) { found = true; return }
+            })
+            if (!found) { return true }
+        })
+        return false
     }
-    console.log("---")
-    for (var i = 0; i < this.locations.length; i++) {
-      var loc = this.locations[i]
-      console.log(`- ${loc.toString()}`)
-      console.log(`  - knows: ${loc.truths}`)
+
+    /**
+     * Checks if the given character knows the whole truth
+     * 
+     * @param {Character} character the character to check
+     */
+    knowsTheWholeTruth(character) {
+        if (this.truths.length === character.truths.length) {
+            return true
+        }
+        return false
     }
-    console.log("==============================")
-  }
 
+    /**
+     * A character attack another character and possibly learns a new truth
+     * @param {Character} character1 attacker
+     * @param {Character} character2 victim
+     */
+    attack(character1, character2) {
+        // if (character1 !== character2) {
+        //     let truthsBefore = character1.truths.length
+        //     let newTruth = character2.truths.sample()
+        //     character1.learnTruth(newTruth)
+        //     let truthsAfter = character1.truths.length
+        //     character2.die()
+        //     console.log(`${character1.name} attacks ${character2.name} and learns ${truthsBefore < truthsAfter ? newTruth.toString() : "nothing new"}`);
+        // }
+    }
 
-  /**
-   * Returns true if there is any truth that no alive character knows.
-   */
-  truthLost() {
+    /**
+     * A character talks to another character and possibly learns a new truth
+     * @param {Character} character1 initiatior
+     * @param {Character} character2 target
+     */
+    talkTo(character1, character2) {
+        if (character1 !== character2) {
+            if (character1.likes(character2)) {
+                let truthsBefore = character1.truths.length
+                let newTruth = character2.truths.sample()
+                if (newTruth) {
+                    character1.learnTruth(newTruth)
+                    let truthsAfter = character1.truths.length
+                    console.log(`${character1.name} talks to ${character2.name} and learns ${truthsBefore < truthsAfter ? newTruth.toString() : "nothing new"}`);
+                }
+            } else {
+                console.log(`${character1.name} does not like ${character2.name} enough to learn anything from conversation`)
+            }
+        }
+    }
 
-    //only characters that are alive may speak truths.
-    let chars = this.characters.filter(x=>x.alive)
-    
-    try {
-      this.truths.forEach(truth => {
-        let found = false;
+    /**
+     * A character travels to a new location and possibly learns a new truth
+     * @param {Character} character traveller
+     * @param {Location} location destination
+     */
+    travelTo(character, location) {
+        if (character.location !== location) {
+            let truthsBefore = character.truths.length
+            let newTruth = location.truths.sample()
+            if (newTruth) {
+                character.learnTruth(newTruth)
+                let truthsAfter = character.truths.length
+                character.location = location
+                console.log(`${character.name} goes to the ${location.name} and learns ${truthsBefore < truthsAfter ? newTruth.toString() : "nothing new"}`);
+            }
+        }
+    }
+
+    /**
+     * A character investigates a given location and possibly learns a new truth
+     */
+    investigate(character, location) {
+        if (character.location === location) {
+            let truthsBefore = character.truths.count
+            let newTruth = location.truths.sample()
+            character.learnTruth(newTruth)
+            let truthsAfter = character.truths.count
+            console.log(`${character.name} investigates ${location.name} and learns ${truthsBefore < truthsAfter ? "something new" : "nothing new"}`);
+        }
+    }
+
+    /**
+     * A character wanders off into the unknown
+     * @param {Character} character wanderer
+     */
+    wanderOff(character) {
+        // character.die()
+    }
+
+    /**
+     * Check if the simulation can continue
+     */
+    canStep() {
+        // Does somebody know the whole truth?
+        if (this.characters.filter(x => this.knowsTheWholeTruth(x)).length > 0) { return false }
         
-        chars.forEach(char=>{
-          if(found){ return; }
-          
-          let c_truth =  char.truths.map(x=>x.truth)[truth.index];
-          
-          if(!c_truth){
-            return
-          }
-
-          if(c_truth === truth ){
-            found = true;
-            return;
-          }
-
-        });
+        // Has a truth been lost?
+        if (this.truthLost()) { console.log(`A truth has been lost!`); return false }
         
-        if(!found){
-          throw -1; 
+        // Is everybody dead?
+        if (this.characters.filter(x => x.alive) == 0) { console.log(`Everybody is dead!`); return false }
+
+        // Nothing prevents execution
+        return true
+    }
+
+    /**
+     * Execute one step of the simulation
+     */
+    step() {
+        // Return false if simulation is in a termination state
+        if (!this.canStep()) { return false }
+
+        // Allow each character (in random order) to perform an action
+        let charactersForStep = this.characters.shuffle()
+        for (let index = 0; index < charactersForStep.length; index++) {
+            const character = charactersForStep[index];
+            
+            // Allow a character to perform one action
+            character.performAction()
+
+            // Check for winning conditions
+            if (this.knowsTheWholeTruth(character)) { break }
         }
-      });
-    } catch(e){
-      return true;
-    }
-    return false;
-
-  }
-
-
-
-  simulateStep() {
-    if (this.halted) {
-      console.log(`Simulation halted`)
-      return false
     }
 
-    if (this.truthSayer) {
-      console.log(`The whole truth has been spoken after ${this.simulationCount} simulations`)
-      return false
-    }
-
-    if (this.allDead()) {
-      console.log(`Everyone is dead`)
-      return false
-    }
-
-    if (this.truthLost()) {
-      console.log(`A truth has been lost after ${this.simulationCount} steps`)
-      return false
-    }
-
-    this.simulationCount += 1
-
-    if (this.verbose) {
-      console.log(`Simulation #${this.simulationCount}`)
-    }
-
-    var shuffled_characters = shuffleArray(this.characters)
-
-    for (var i = shuffled_characters.length - 1; i >= 0; i--) {
-      var currentChar = shuffled_characters[i]
-
-      if (!currentChar.alive) {
-        continue
-      }
-
-      currentChar.perform_action()
-      
-      if(this.truthLost()){
-        console.log('weeeeelll fuck');
-        throw -1; 
-      }
-      // check if the current character knows everything
-
-      let everythingCorrect = true;
-
-      for (let i = 0; i < this.truths.length; i++) {
-        const element = this.truths[i];
-
-        if( typeof(currentChar.truths[i]) === 'undefined'){
-          everythingCorrect = false;
-          break;
+    /**
+     * Run simulation until an end condition is met
+     */
+    run() {
+        this.printStateOfTheWorld()
+        console.log("Running simulation...")
+        while (this.canStep() && this.stepCount < 200) {
+            this.stepCount += 1
+            console.log(`Running step ${this.stepCount}`)
+            this.step()
         }
-
-        if(element !== currentChar.truths[i].truth){
-          
-          everythingCorrect = false;
-          break;
-        }
-      }
-
-      if (everythingCorrect) {
-        console.log(`${currentChar.name} speaks the whole truth`)
-        this.truthSayer = currentChar
-        break
-      }
+        this.printStateOfTheWorld()
     }
 
-
-    if (this.verbose) {
-      console.log("==================================================")
+    printStateOfTheWorld() {
+        console.log("===== THE WORLD =====")
+        console.log(`The whole truth: [${this.truths.map(x => `"${x.name}"`).join(",")}]`)
+        this.locations.forEach(x => console.log(x.toString()))
+        this.characters.forEach(x => console.log(x.toString()))
+        console.log("=====================")
     }
-
-    return true
-  }
-
-  
-
-
 }
 
-module.exports = {
-  Game
-}
+module.exports = { Game }
