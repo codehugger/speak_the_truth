@@ -1,21 +1,32 @@
+const randomGaussian = require('./utils.js').randomGaussian
 const names = require('./names.js').characterNames
 
 let characterNames = []
 
 class Character {
-    constructor(game, name="") {
+    constructor(game, name="", personality=[]) {
         this.game = game
         this.name = (name ? name : names.filter(n=>!characterNames.includes(n)).sample())
         this.alive = true
         this.truths = []
-        this.personality = [Math.random(), Math.random(), Math.random(), Math.random()]
         this.actionMemory = []
+
+        if (personality.empty) {
+            this.personality = [Math.random(),
+                                Math.random(),
+                                Math.random(),
+                                Math.random()]
+        }
 
         // Scale personality so that the sum is 1
         let personalitySum = this.personality.reduce((prev,curr) => prev + curr)
         this.personality = this.personality.map(x => x/personalitySum)
 
+        // Record the name used so that we don't use it again
         characterNames.push(this.name)
+
+        // Reset the characterNames when they have been used up
+        if (characterNames.length = names.length) { characterNames = [] }
     }
 
     /**
@@ -77,7 +88,7 @@ class Character {
      * @param {Truth} truth truth to verify
      */
     hasTruth(truth) {
-        this.truths.indexOf(truth) > 0
+        this.truths.includes(truth)
     }
 
      /**
@@ -105,6 +116,19 @@ class Character {
     likes(other, threshold=0.2) {
         if (this.similarity(other) > threshold) { return true }
         return false
+    }
+
+    /**
+     * Returns a normalized vector similar but not equivalent
+     * to this characters vector.
+     */
+    mutate(){
+        let newPersonality = []
+        let std = 0.5
+        this.personality.forEach(function(p) {
+            newPersonality.push(Math.max(0, Math.min(1, randomGaussian(p, std))))
+        });
+        return newPersonality;
     }
 
     /**
@@ -157,7 +181,7 @@ class Character {
         }
         else {
             // Select another character to interact with
-            let character = this.game.characters.filter(x => x !== this).sample()
+            let character = this.game.characters.filter(x => x !== this).filter(x=>x.alive).sample()
 
             // Select a location to interact with
             let location = this.game.locations.filter(x => x !== this.location).sample()

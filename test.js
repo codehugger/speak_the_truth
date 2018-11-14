@@ -2,4 +2,7 @@ const Game = require('./Game.js').Game
 
 var game = new Game()
 
-game.run()
+// for (let i = 0; i < 1000; i++) {
+    game.reset()
+    game.run()
+// }

@@ -35,7 +35,7 @@ class Location {
      * @param {Truth} truth truth to verify
      */
     hasTruth(truth) {
-        this.truths.indexOf(truth) > 0
+        this.truths.includes(truth)
     }
 
     toString() {

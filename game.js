@@ -6,13 +6,18 @@ const Truth = require('./truth.js').Truth
 require('./utils.js')
 
 class Game {
-    constructor(location_count=5, character_count=5, weapon_count=5) {
+    constructor(location_count=5, character_count=5, weapon_count=5, truth_count=5, options={}) {
         // Init
         this.characters = []
         this.locations = []
         this.weapons = []
         this.truths = []
+        this.deadCharacters = []
         this.stepCount = 0
+        this.regenerateCharacters = true
+
+        // Override with options
+        this.parseOptions(options)
 
         // Generate locations
         for (let i = 0; i < location_count; i++) {
@@ -30,9 +35,9 @@ class Game {
         }
 
         // Create the truth
-        this.truths.push(new Truth(this, this.characters.sample().name))
-        this.truths.push(new Truth(this, this.locations.sample().name))
-        this.truths.push(new Truth(this, this.weapons.sample().name))
+        for (let i = 0; i < truth_count; i++) {
+            this.truths.push(new Truth(this))
+        }
 
         this.reset()
     }
@@ -47,6 +52,9 @@ class Game {
         // Reset locations and characters
         this.characters.forEach(x => x.reset())
         this.locations.forEach(x => x.reset())
+
+        // All characters are now alive
+        this.deadCharacters = []
 
         // Assign characters to random locations
         this.characters.forEach(x => x.location = this.locations.sample())
@@ -63,6 +71,14 @@ class Game {
                 this.characters.sample().learnTruth(truth)
             }
         }
+    }
+
+    /**
+     * Parses options from given object and applies them
+     * @param {Object} options options to parse
+     */
+    parseOptions(options) {
+        Object.keys(options).forEach(key=>this[key]=options[key])
     }
 
     /**
@@ -96,6 +112,32 @@ class Game {
     }
 
     /**
+     * Inspects a character and determines if the character is the only
+     * one that knows some truth.
+     * @param {Character} character character to inspect
+     */
+    hasEssentialTruth(character) {
+        return this.essentialTruths(character).length > 0
+    }
+
+    essentialTruths(character) {
+        let truths = []
+        for (let index = 0; index < character.truths.length; index++) {
+            let truth = character.truths[index]
+            let relevantCharacters = this.characters.filter(c=>c.hasTruth(truth))
+                                                    .filter(c=>c.alive)
+                                                    .filter(c=>c!=character)
+            let relevantLocations = this.locations.filter(l=>l.hasTruth(truth))
+
+            if (relevantCharacters.length == 0 &&
+                relevantLocations.length == 0) {
+                truths.push(truth)
+            }
+        }
+        return truths
+    }
+
+    /**
      * A character attack another character and possibly learns a new truth
      * @param {Character} character1 attacker
      * @param {Character} character2 victim
@@ -107,7 +149,8 @@ class Game {
             character1.learnTruth(newTruth)
             let truthsAfter = character1.truths.length
             character2.die()
-            console.log(`${character1.name} attacks ${character2.name} and learns ${truthsBefore < truthsAfter ? `the truth about "${newTruth.name}"` : "nothing new"}`);
+            console.log(`${character1.name} attacks ${character2.name} in the ${character2.location.name} ${truthsBefore < truthsAfter ? `and learns the truth about "${newTruth.name}"` : "but learns nothing new"}`);
+            this.deadCharacters.push(character2)
         }
     }
 
@@ -124,10 +167,10 @@ class Game {
                 if (newTruth) {
                     character1.learnTruth(newTruth)
                     let truthsAfter = character1.truths.length
-                    console.log(`${character1.name} talks to ${character2.name} and learns ${truthsBefore < truthsAfter ? `the truth about "${newTruth.name}"` : "nothing new"}`);
+                    console.log(`${character1.name} talks to ${character2.name} in the ${character2.location.name} ${truthsBefore < truthsAfter ? `and learns the truth about "${newTruth.name}"` : "but learns nothing new"}`);
                 }
             } else {
-                console.log(`${character1.name} does not like ${character2.name} enough to learn anything from conversation`)
+                console.log(`${character1.name} tries to talk to ${character2.name} but ${character2.name} refuses to pass on any knowledge`)
             }
         }
     }
@@ -145,9 +188,8 @@ class Game {
                 character.learnTruth(newTruth)
                 let truthsAfter = character.truths.length
                 character.location = location
-                console.log(`${character.name} goes to the ${location.name} and learns ${truthsBefore < truthsAfter ? `the truth about "${newTruth.name}"` : "nothing new"}`);
+                console.log(`${character.name} goes to the ${location.name} ${truthsBefore < truthsAfter ? `and learns the truth about "${newTruth.name}"` : "but learns nothing new"}`);
             }
-
         }
     }
 
@@ -156,11 +198,11 @@ class Game {
      */
     investigate(character, location) {
         if (character.location === location) {
-            let truthsBefore = character.truths.count
+            let truthsBefore = character.truths.length
             let newTruth = location.truths.sample()
             character.learnTruth(newTruth)
-            let truthsAfter = character.truths.count
-            console.log(`${character.name} investigates ${location.name} and learns ${truthsBefore < truthsAfter ? `the truth about "${newTruth.name}"` : "nothing new"}`);
+            let truthsAfter = character.truths.length
+            console.log(`${character.name} investigates the ${location.name} ${truthsBefore < truthsAfter ? `and learns the truth about "${newTruth.name}"` : "but learns nothing new"}`);
         }
     }
 
@@ -169,7 +211,9 @@ class Game {
      * @param {Character} character wanderer
      */
     wanderOff(character) {
-        // character.die()
+        console.log(`${character.name} has wandered off into the night.`)
+        character.die()
+        this.deadCharacters.push(character)
     }
 
     /**
@@ -181,7 +225,6 @@ class Game {
             const character = this.characters[index];
             if (this.knowsTheWholeTruth(character)) {
                 console.log(`${character.name} has learned the whole truth!`)
-                console.log(`It was ${this.truths[0].name} with the ${this.truths[2].name} in the ${this.truths[1].name}!`)
                 return false
             }
         }
@@ -205,14 +248,50 @@ class Game {
 
         // Allow each character (in random order) to perform an action
         let charactersForStep = this.characters.shuffle()
-        for (let index = 0; index < charactersForStep.length; index++) {
-            const character = charactersForStep[index];
+        for (let i = 0; i < charactersForStep.length; i++) {
+            const character = charactersForStep[i];
 
-            // Allow a character to perform one action
-            character.performAction()
+            // Allow a character that is not dead to perform one action
+            if (character.alive) {
+                character.performAction()
+            }
 
             // Check for winning conditions
             if (this.knowsTheWholeTruth(character)) { break }
+        }
+
+        if (this.deadCharacters.length > 0) {
+            // Generate new characters if needed to continue the story
+            let lostTruths = []
+
+            // Collect lost truths
+            for (let i = 0; i < this.deadCharacters; i++) {
+                let deadCharacter = this.deadCharacters[i]
+                lostTruths.concat(this.essentialTruths(deadCharacter))
+            }
+
+            // make sure we don't have any duplicate truths
+            lostTruths = lostTruths.distinct()
+
+            console.log("Lost Truths", lostTruths.length)
+
+            if (lostTruths.length > 0) {
+                // pick a dead character at random and use as template for new character
+                let modelCharacter = this.deadCharacters.sample()
+                // Spawn a new character with a mutated personality
+                let newCharacter = new Character(this, "", modelCharacter.mutate())
+                // Put the new character in a random location
+                newCharacter.location = this.locations.sample()
+                // Let the character have the essential knowledge
+                newCharacter.truths = lostTruths
+                // Add the new character to the pool of characters
+                this.characters.push(newCharacter)
+
+                console.log(`${newCharacter.name} arrives with essential knowledge of [${newCharacter.truths.map(n=>`"${n.name}"`).join(",")}]`)
+            }
+
+            // Reset dead characters
+            this.deadCharacters = []
         }
     }
 
@@ -221,21 +300,21 @@ class Game {
      */
     run() {
         this.printStateOfTheWorld()
-        while (this.canStep() && this.stepCount < 200) {
+        while (this.canStep() && this.stepCount < 1000) {
             this.stepCount += 1
             console.log(`Round ${this.stepCount}`)
             console.log(`===============================`)
             this.step()
             console.log(`-------------------------------`)
+            this.printStateOfTheWorld()
         }
-        this.printStateOfTheWorld()
     }
 
     printStateOfTheWorld() {
         console.log("========== THE WORLD ==========")
         console.log(`The whole truth: [${this.truths.map(x => `"${x.name}"`).join(",")}]`)
         this.locations.forEach(x => console.log(x.toString()))
-        this.characters.forEach(x => console.log(x.toString()))
+        this.characters.filter(c=>c.alive).forEach(x => console.log(x.toString()))
         this.weapons.forEach(x=>console.log(x.toString()))
         console.log("===============================")
     }
