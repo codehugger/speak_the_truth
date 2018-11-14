@@ -1,9 +1,11 @@
 const names = require('./names.js').characterNames
 
+let characterNames = []
+
 class Character {
     constructor(game, name="") {
         this.game = game
-        this.name = (name ? name : names.sample())
+        this.name = (name ? name : names.filter(n=>characterNames.indexOf(n)).sample())
         this.alive = true
         this.truths = []
         this.personality = [Math.random(), Math.random(), Math.random(), Math.random()]
@@ -12,6 +14,8 @@ class Character {
         // Scale personality so that the sum is 1
         let personalitySum = this.personality.reduce((prev,curr) => prev + curr)
         this.personality = this.personality.map(x => x/personalitySum)
+
+        characterNames.push(this.name)
     }
 
     /**
@@ -83,19 +87,19 @@ class Character {
     similarity(other) {
         // https://en.wikipedia.org/wiki/Cosine_similarity
         let usum = 0;
-        
+
         for (let i = 0; i < this.personality.length; i++) {
             usum += (other.personality[i] * this.personality[i]);
         }
 
         let mySum = this.personality.reduce((x,y) => x + (y*y) )
         let theirSum = other.personality.reduce((x,y) => x + (y*y) )
-        
+
         return usum / (Math.sqrt(mySum)*Math.sqrt(theirSum));
     }
 
     /**
-     * Return true or false based on the given threshold of similarity 
+     * Return true or false based on the given threshold of similarity
      * @param {Character} other character to determine if we like
      */
     likes(other, threshold=0.2) {
