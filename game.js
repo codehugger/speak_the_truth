@@ -6,7 +6,7 @@ const Truth = require('./truth.js').Truth
 require('./utils.js')
 
 class Game {
-    constructor(location_count=5, character_count=5, truth_count=5, weapon_count=5) {
+    constructor(location_count=5, character_count=5, weapon_count=5) {
         // Init
         this.characters = []
         this.locations = []
@@ -29,10 +29,10 @@ class Game {
             this.weapons.push(new Weapon(this))
         }
 
-        // Generate truths
-        for (let i = 0; i < truth_count; i++) {
-            this.truths.push(new Truth(this))
-        }
+        // Create the truth
+        this.truths.push(new Truth(this, this.characters.sample().name))
+        this.truths.push(new Truth(this, this.locations.sample().name))
+        this.truths.push(new Truth(this, this.weapons.sample().name))
 
         this.reset()
     }
@@ -181,6 +181,7 @@ class Game {
             const character = this.characters[index];
             if (this.knowsTheWholeTruth(character)) {
                 console.log(`${character.name} has learned the whole truth!`)
+                console.log(`It was ${this.truths[0].name} with the ${this.truths[2].name} in the ${this.truths[1].name}!`)
                 return false
             }
         }

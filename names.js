@@ -135,10 +135,12 @@ module.exports = {
     ],
     weaponNames: [
         "Candlestick",
-        "Dumbell",
-        "Lead Pipe",
-        "Revolver",
+        "Wrench",
         "Rope",
-        "Wrench"
+        "Lead Pipe",
+        "Knife",
+        "Revolver",
+        "Axe",
+        "Poison"
     ]
 }

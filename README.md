@@ -2,8 +2,10 @@
 
 ## How to run
 
-Open `index.html` in a browser and open a developer console.
+To run one complete simulation do
 
-There is already a game object initialized so to start a simulation just do:
+> node test.js
 
-> game.simulate()
+To attach a debugger to the simulation use `debugger` in the code and do
+
+> node inspect test.js
