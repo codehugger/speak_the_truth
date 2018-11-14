@@ -235,6 +235,7 @@ class Game {
         console.log(`The whole truth: [${this.truths.map(x => `"${x.name}"`).join(",")}]`)
         this.locations.forEach(x => console.log(x.toString()))
         this.characters.forEach(x => console.log(x.toString()))
+        this.weapons.forEach(x=>console.log(x.toString()))
         console.log("===============================")
     }
 }

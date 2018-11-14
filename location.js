@@ -5,7 +5,7 @@ let locationNames = []
 class Location {
     constructor(game, name="") {
         this.game = game
-        this.name = (name ? name : names.filter(n=>(locationNames.indexOf(n))).sample())
+        this.name = (name ? name : names.filter(n=>!locationNames.includes(n)).sample())
         this.truths = []
 
         locationNames.push(this.name)

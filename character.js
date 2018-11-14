@@ -5,7 +5,7 @@ let characterNames = []
 class Character {
     constructor(game, name="") {
         this.game = game
-        this.name = (name ? name : names.filter(n=>characterNames.indexOf(n)).sample())
+        this.name = (name ? name : names.filter(n=>!characterNames.includes(n)).sample())
         this.alive = true
         this.truths = []
         this.personality = [Math.random(), Math.random(), Math.random(), Math.random()]
