@@ -18,9 +18,12 @@ class Character {
                                 Math.random()]
         }
 
-        // Scale personality so that the sum is 1
-        let personalitySum = this.personality.reduce((prev,curr) => prev + curr)
-        this.personality = this.personality.map(x => x/personalitySum)
+        // Personality = 1
+        let personalitySum = this.personality.reduce((x,y)=>x+y)
+        this.personality = this.personality.map((x)=>x/personalitySum)
+
+        this.peopleSkills = (this.personality[0] + this.personality[1])
+        this.worldSkills = (this.personality[2] + this.personality[3])
 
         // Record the name used so that we don't use it again
         characterNames.push(this.name)
@@ -173,34 +176,40 @@ class Character {
      * Perform an action based on this character's personality
      */
     performAction() {
+        // Random action parameter
         let action = Math.random()
 
-        // There is always a 1% chance of the character wandering off
+        // There is always a 1% chance that the character wanders
         if (action < 0.01) {
             this.wanderOff()
-        }
-        else {
+        } else {
             // Select another character to interact with
             let character = this.game.characters.filter(x => x !== this).filter(x=>x.alive).sample()
 
             // Select a location to interact with
             let location = this.game.locations.filter(x => x !== this.location).sample()
 
-            // console.log(action, character.personality, this.aggression() + this.charisma() + this.curiosity());
+            // People skills only apply when there is a character nearby
+            if (character && action < this.peopleSkills) {
+                let scaledAction = action * (this.aggression() + this.charisma())
 
-            // Personality profile probability
-            if (action < this.aggression()) {
-                // Attack somebody unless the character is alone
-                if (character) { this.attack(character) }
-            } else if (action < (this.aggression() + this.charisma())) {
-                // Talk to somebody unless the character is alone
-                if (character) { this.talkTo(character) }
-            } else if (action < (this.aggression() + this.charisma() + this.curiosity())) {
-                // Explore a new location if any are available
-                if (location) { this.travelTo(location) }
+                if (scaledAction < this.aggression()) {
+                    // Attack another character
+                    this.attack(character)
+                } else {
+                    // Talk to a character
+                    this.talkTo(character)
+                }
             } else {
-                // Investigate the current location
-                this.investigate()
+                let scaledAction = action * (this.curiosity() + this.intelligence())
+
+                if (scaledAction < this.curiosity()) {
+                    // Explore a new location if any are available
+                    this.travelTo(location)
+                } else {
+                    // Investigate the current location
+                    this.investigate()
+                }
             }
         }
     }

@@ -15,6 +15,7 @@ class Game {
         this.deadCharacters = []
         this.stepCount = 0
         this.regenerateCharacters = true
+        this.wholeTruthDiscovered = false
 
         // Override with options
         this.parseOptions(options)
@@ -120,6 +121,10 @@ class Game {
         return this.essentialTruths(character).length > 0
     }
 
+    /**
+     * Extract relevant truths (that no one else has) from the given character
+     * @param {Character} character character who holds the truths
+     */
     essentialTruths(character) {
         let truths = []
         for (let index = 0; index < character.truths.length; index++) {
@@ -257,9 +262,10 @@ class Game {
             }
 
             // Check for winning conditions
-            if (this.knowsTheWholeTruth(character)) { break }
+            if (this.knowsTheWholeTruth(character)) { this.wholeTruthDiscovered = true; break }
         }
 
+        // Handle dead characters
         if (this.deadCharacters.length > 0) {
             // Generate new characters if needed to continue the story
             let lostTruths = []
@@ -272,8 +278,6 @@ class Game {
 
             // make sure we don't have any duplicate truths
             lostTruths = lostTruths.distinct()
-
-            console.log("Lost Truths", lostTruths.length)
 
             if (lostTruths.length > 0) {
                 // pick a dead character at random and use as template for new character
