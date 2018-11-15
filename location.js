@@ -3,8 +3,8 @@ const names = require('./names.js').locationNames
 let locationNames = []
 
 class Location {
-    constructor(game, name="") {
-        this.game = game
+    constructor(engine, name="") {
+        this.engine = engine
         this.name = (name ? name : names.filter(n=>!locationNames.includes(n)).sample())
         this.truths = []
 

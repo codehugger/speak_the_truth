@@ -1,327 +1,144 @@
-const Character = require('./character.js').Character
-const Location = require('./location.js').Location
-const Weapon = require('./weapon.js').Weapon
-const Truth = require('./truth.js').Truth
+const inquirer = require('inquirer')
+const Engine = require('./engine').Engine
 
-require('./utils.js')
+let characterCount = 0
+let locationCount = 0
+let weaponCount = 0
+let truthCount = 0
+var engine;
 
-class Game {
-    constructor(location_count=5, character_count=5, weapon_count=5, truth_count=5, options={}) {
-        // Init
-        this.characters = []
-        this.locations = []
-        this.weapons = []
-        this.truths = []
-        this.deadCharacters = []
-        this.stepCount = 0
-        this.regenerateCharacters = true
-        this.wholeTruthDiscovered = false
-
-        // Override with options
-        this.parseOptions(options)
-
-        // Generate locations
-        for (let i = 0; i < location_count; i++) {
-            this.characters.push(new Character(this))
+inquirer
+    .prompt([
+        {
+            type: 'list',
+            name: 'difficulty',
+            message: 'What difficulty level would you like?',
+            choices: ['Easy', 'Medium', 'Hard']
+        }
+    ])
+    .then(answers => {
+        switch(answers['difficulty'].toLowerCase()) {
+            case 'easy': {
+                characterCount = 5; locationCount = 5; weaponCount = 5; truthCount = 3; break
+            }
+            case 'medium': {
+                characterCount = 10; locationCount = 10; weaponCount = 8; truthCount = 5; break
+            }
+            case 'hard': {
+                characterCount = 20; locationCount = 15; weaponCount = 8; truthCount = 8; break
+            }
         }
 
-        // Generate characters
-        for (let i = 0; i < character_count; i++) {
-            this.locations.push(new Location(this))
-        }
+        engine = new Engine(locationCount, characterCount, weaponCount, truthCount, true)
 
-        // Generate weapons
-        for (let i = 0; i < weapon_count; i++) {
-            this.weapons.push(new Weapon(this))
-        }
+        console.log("-------------------------------------------------------------------------------------")
+        console.log("A NIGHT TO REMEMBER")
+        console.log("-------------------------------------------------------------------------------------")
+        console.log("It's a dark and stormy night.")
+        console.log("A terrible crime has been committed at the Dunner Mansion.")
+        console.log("The host Mr. Dunner has been killed during a public fundraiser.")
+        console.log("You, my dear detective Shaw have been sent to the location.")
+        console.log("Get to the bottom of this before it turns into a media fiasco!")
+        console.log("Everything has been done in order to secure the area.")
+        console.log("However, there simply aren't enough officers available to keep track of everyone.")
+        console.log("The guests themselves seem quite eager to talk to the press.")
+        console.log("As far as I can tell they have started their own little investigation.")
+        console.log("They will stop at nothing!")
+        console.log("Some might even say that they are 'dying' for the truth to come out.")
+        console.log("Solve this quickly! Be thorough! Use force if necessary!")
+        console.log("-------------------------------------------------------------------------------------")
 
-        // Create the truth
-        for (let i = 0; i < truth_count; i++) {
-            this.truths.push(new Truth(this))
-        }
-
-        this.reset()
-    }
-
-    /**
-     * Reset the simulation
-     */
-    reset() {
-        // Reset the step counter
-        this.stepCount = 0
-
-        // Reset locations and characters
-        this.characters.forEach(x => x.reset())
-        this.locations.forEach(x => x.reset())
-
-        // All characters are now alive
-        this.deadCharacters = []
-
-        // Assign characters to random locations
-        this.characters.forEach(x => x.location = this.locations.sample())
-
-        // Assign truths randomly to characters and locations
-        for (let index = 0; index < this.truths.length; index++) {
-            const truth = this.truths[index]
-            const prob = Math.random()
-
-            // Assign truth to character or location with probability 0.5
-            if (prob < 0.5) {
-                this.locations.sample().learnTruth(truth)
+        function attack() {
+            if (engine.playerAvailableCharacters().length > 1) {
+                inquirer.prompt({
+                    type: 'list',
+                    name: 'character',
+                    message: 'Who would you like to attack?',
+                    choices: engine.playerAvailableCharacters().map(l=>l.name)
+                }).then(answers => {
+                    engine.playerAttack(answers.character)
+                    endTurn()
+                })
             } else {
-                this.characters.sample().learnTruth(truth)
+                engine.playerAttack(engine.playerAvailableCharacters()[0].name)
+                endTurn()
             }
         }
-    }
 
-    /**
-     * Parses options from given object and applies them
-     * @param {Object} options options to parse
-     */
-    parseOptions(options) {
-        Object.keys(options).forEach(key=>this[key]=options[key])
-    }
-
-    /**
-     * Check if a truth has been lost
-     */
-    truthLost() {
-        var self = this
-        this.truths.forEach(function(x) {
-            var found = false
-            self.locations.forEach(function(location) {
-                if (location.hasTruth(x)) { found = true; return }
+        function explore() {
+            inquirer.prompt({
+                type: 'list',
+                name: 'location',
+                message: 'Where would you like to go?',
+                choices: engine.playerAvailableLocations().map(l=>l.name)
+            }).then(answers => {
+                engine.playerTravelTo(answers.location)
+                endTurn()
             })
-            self.characters.forEach(function(character) {
-                if (character.hasTruth(x)) { found = true; return }
-            })
-            if (!found) { return true }
-        })
-        return false
-    }
-
-    /**
-     * Checks if the given character knows the whole truth
-     *
-     * @param {Character} character the character to check
-     */
-    knowsTheWholeTruth(character) {
-        if (this.truths.length === character.truths.length) {
-            return true
         }
-        return false
-    }
 
-    /**
-     * Inspects a character and determines if the character is the only
-     * one that knows some truth.
-     * @param {Character} character character to inspect
-     */
-    hasEssentialTruth(character) {
-        return this.essentialTruths(character).length > 0
-    }
-
-    /**
-     * Extract relevant truths (that no one else has) from the given character
-     * @param {Character} character character who holds the truths
-     */
-    essentialTruths(character) {
-        let truths = []
-        for (let index = 0; index < character.truths.length; index++) {
-            let truth = character.truths[index]
-            let relevantCharacters = this.characters.filter(c=>c.hasTruth(truth))
-                                                    .filter(c=>c.alive)
-                                                    .filter(c=>c!=character)
-            let relevantLocations = this.locations.filter(l=>l.hasTruth(truth))
-
-            if (relevantCharacters.length == 0 &&
-                relevantLocations.length == 0) {
-                truths.push(truth)
-            }
-        }
-        return truths
-    }
-
-    /**
-     * A character attack another character and possibly learns a new truth
-     * @param {Character} character1 attacker
-     * @param {Character} character2 victim
-     */
-    attack(character1, character2) {
-        if (character1 !== character2) {
-            let truthsBefore = character1.truths.length
-            let newTruth = character2.truths.sample()
-            character1.learnTruth(newTruth)
-            let truthsAfter = character1.truths.length
-            character2.die()
-            console.log(`${character1.name} attacks ${character2.name} in the ${character2.location.name} ${truthsBefore < truthsAfter ? `and learns the truth about "${newTruth.name}"` : "but learns nothing new"}`);
-            this.deadCharacters.push(character2)
-        }
-    }
-
-    /**
-     * A character talks to another character and possibly learns a new truth
-     * @param {Character} character1 initiatior
-     * @param {Character} character2 target
-     */
-    talkTo(character1, character2) {
-        if (character1 !== character2) {
-            if (character1.likes(character2)) {
-                let truthsBefore = character1.truths.length
-                let newTruth = character2.truths.sample()
-                if (newTruth) {
-                    character1.learnTruth(newTruth)
-                    let truthsAfter = character1.truths.length
-                    console.log(`${character1.name} talks to ${character2.name} in the ${character2.location.name} ${truthsBefore < truthsAfter ? `and learns the truth about "${newTruth.name}"` : "but learns nothing new"}`);
-                }
+        function talkTo() {
+            if (engine.playerAvailableCharacters().length > 1) {
+                inquirer.prompt({
+                    type: 'list',
+                    name: 'character',
+                    message: 'Who would you like to speak with?',
+                    choices: engine.playerAvailableCharacters().map(c=>c.name)
+                }).then(answers => {
+                    engine.playerTalkTo(answers.character)
+                    endTurn()
+                })
             } else {
-                console.log(`${character1.name} tries to talk to ${character2.name} but ${character2.name} refuses to pass on any knowledge`)
-            }
-        }
-    }
-
-    /**
-     * A character travels to a new location and possibly learns a new truth
-     * @param {Character} character traveller
-     * @param {Location} location destination
-     */
-    travelTo(character, location) {
-        if (character.location !== location) {
-            let truthsBefore = character.truths.length
-            let newTruth = location.truths.sample()
-            if (newTruth) {
-                character.learnTruth(newTruth)
-                let truthsAfter = character.truths.length
-                character.location = location
-                console.log(`${character.name} goes to the ${location.name} ${truthsBefore < truthsAfter ? `and learns the truth about "${newTruth.name}"` : "but learns nothing new"}`);
-            }
-        }
-    }
-
-    /**
-     * A character investigates a given location and possibly learns a new truth
-     */
-    investigate(character, location) {
-        if (character.location === location) {
-            let truthsBefore = character.truths.length
-            let newTruth = location.truths.sample()
-            character.learnTruth(newTruth)
-            let truthsAfter = character.truths.length
-            console.log(`${character.name} investigates the ${location.name} ${truthsBefore < truthsAfter ? `and learns the truth about "${newTruth.name}"` : "but learns nothing new"}`);
-        }
-    }
-
-    /**
-     * A character wanders off into the unknown
-     * @param {Character} character wanderer
-     */
-    wanderOff(character) {
-        console.log(`${character.name} has wandered off into the night.`)
-        character.die()
-        this.deadCharacters.push(character)
-    }
-
-    /**
-     * Check if the simulation can continue
-     */
-    canStep() {
-        // Does somebody know the whole truth?
-        for (let index = 0; index < this.characters.length; index++) {
-            const character = this.characters[index];
-            if (this.knowsTheWholeTruth(character)) {
-                console.log(`${character.name} has learned the whole truth!`)
-                return false
+                engine.playerTalkTo(engine.playerAvailableCharacters()[0].name)
+                endTurn()
             }
         }
 
-        // Has a truth been lost?
-        if (this.truthLost()) { console.log(`A truth has been lost!`); return false }
-
-        // Is everybody dead?
-        if (this.characters.filter(x => x.alive) == 0) { console.log(`Everybody is dead!`); return false }
-
-        // Nothing prevents execution
-        return true
-    }
-
-    /**
-     * Execute one step of the simulation
-     */
-    step() {
-        // Return false if simulation is in a termination state
-        if (!this.canStep()) { return false }
-
-        // Allow each character (in random order) to perform an action
-        let charactersForStep = this.characters.shuffle()
-        for (let i = 0; i < charactersForStep.length; i++) {
-            const character = charactersForStep[i];
-
-            // Allow a character that is not dead to perform one action
-            if (character.alive) {
-                character.performAction()
-            }
-
-            // Check for winning conditions
-            if (this.knowsTheWholeTruth(character)) { this.wholeTruthDiscovered = true; break }
+        function investigate() {
+            engine.playerInvestigate()
+            endTurn()
         }
 
-        // Handle dead characters
-        if (this.deadCharacters.length > 0) {
-            // Generate new characters if needed to continue the story
-            let lostTruths = []
+        function endTurn() {
+            if (engine.canStep()) {
+                engine.step()
+                ask()
+            }
+        }
 
-            // Collect lost truths
-            for (let i = 0; i < this.deadCharacters; i++) {
-                let deadCharacter = this.deadCharacters[i]
-                lostTruths.concat(this.essentialTruths(deadCharacter))
+        function ask() {
+            console.log(`You are standing in the ${engine.player.location.name}`)
+
+            debugger
+
+            if (engine.playerAvailableCharacters().length) {
+                console.log("There are people with you.")
+                engine.playerAvailableCharacters().forEach((c) => console.log(`- ${c.name}`))
+            } else {
+                console.log("You are alone.")
             }
 
-            // make sure we don't have any duplicate truths
-            lostTruths = lostTruths.distinct()
-
-            if (lostTruths.length > 0) {
-                // pick a dead character at random and use as template for new character
-                let modelCharacter = this.deadCharacters.sample()
-                // Spawn a new character with a mutated personality
-                let newCharacter = new Character(this, "", modelCharacter.mutate())
-                // Put the new character in a random location
-                newCharacter.location = this.locations.sample()
-                // Let the character have the essential knowledge
-                newCharacter.truths = lostTruths
-                // Add the new character to the pool of characters
-                this.characters.push(newCharacter)
-
-                console.log(`${newCharacter.name} arrives with essential knowledge of [${newCharacter.truths.map(n=>`"${n.name}"`).join(",")}]`)
+            if (engine.canStep()) {
+                inquirer.prompt([{
+                    type: 'list',
+                    name: 'action',
+                    message: 'What would you like to do?',
+                    choices: engine.playerAvailableActions()
+                }]).then(answers => {
+                    if (answers.action == 'Explore') {
+                        explore()
+                    } else if (answers.action == 'Talk') {
+                        talkTo()
+                    } else if (answers.action == 'Investigate') {
+                        investigate()
+                    } else if (answers.action == 'Attack') {
+                        attack()
+                    }
+                })
+            } else {
+                "The mystery has been solved!"
             }
-
-            // Reset dead characters
-            this.deadCharacters = []
         }
-    }
 
-    /**
-     * Run simulation until an end condition is met
-     */
-    run() {
-        this.printStateOfTheWorld()
-        while (this.canStep() && this.stepCount < 1000) {
-            this.stepCount += 1
-            console.log(`Round ${this.stepCount}`)
-            console.log(`===============================`)
-            this.step()
-            console.log(`-------------------------------`)
-            this.printStateOfTheWorld()
-        }
-    }
-
-    printStateOfTheWorld() {
-        console.log("========== THE WORLD ==========")
-        console.log(`The whole truth: [${this.truths.map(x => `"${x.name}"`).join(",")}]`)
-        this.locations.forEach(x => console.log(x.toString()))
-        this.characters.filter(c=>c.alive).forEach(x => console.log(x.toString()))
-        this.weapons.forEach(x=>console.log(x.toString()))
-        console.log("===============================")
-    }
-}
-
-module.exports = { Game }
+        ask()
+    });

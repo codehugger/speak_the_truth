@@ -4,8 +4,8 @@ const names = require('./names.js').characterNames
 let characterNames = []
 
 class Character {
-    constructor(game, name="", personality=[]) {
-        this.game = game
+    constructor(engine, name="", personality=[]) {
+        this.engine = engine
         this.name = (name ? name : names.filter(n=>!characterNames.includes(n)).sample())
         this.alive = true
         this.truths = []
@@ -139,7 +139,7 @@ class Character {
      * @param {Character} character victim of the attack
      */
     attack(character) {
-        this.game.attack(this, character)
+        this.engine.attack(this, character)
     }
 
     /**
@@ -147,7 +147,7 @@ class Character {
      * @param {Character} character target for conversation
      */
     talkTo(character) {
-        this.game.talkTo(this, character)
+        this.engine.talkTo(this, character)
     }
 
     /**
@@ -155,21 +155,21 @@ class Character {
      * @param {Location} location destination
      */
     travelTo(location) {
-        this.game.travelTo(this, location)
+        this.engine.travelTo(this, location)
     }
 
     /**
      * Investigate the current location
      */
     investigate() {
-        this.game.investigate(this, this.location)
+        this.engine.investigate(this, this.location)
     }
 
     /**
      * Wander off into the unknown
      */
     wanderOff() {
-        this.game.wanderOff(this)
+        this.engine.wanderOff(this)
     }
 
     /**
@@ -184,10 +184,10 @@ class Character {
             this.wanderOff()
         } else {
             // Select another character to interact with
-            let character = this.game.characters.filter(x => x !== this).filter(x=>x.alive).sample()
+            let character = this.engine.availableCharacters(this).sample()
 
             // Select a location to interact with
-            let location = this.game.locations.filter(x => x !== this.location).sample()
+            let location = this.engine.availableLocations(this).sample()
 
             // People skills only apply when there is a character nearby
             if (character && action < this.peopleSkills) {
