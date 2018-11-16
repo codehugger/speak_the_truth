@@ -237,21 +237,18 @@ class Engine {
      * @param {Character} character the character being talked to
      */
     playerTalkTo(characterName) {
-        console.log(characterName)
         let character = this.characters.find(c=>c.name == characterName)
 
         // TODO: since the player has no way to improve his stats this needs to work differently
         if (this.player.likes(character)) {
             let truthsBefore = this.player.truths.length
             let newTruth = character.truths.sample()
-            if (newTruth) {
-                this.player.learnTruth(newTruth)
-                let truthsAfter = this.player.truths.length
-                console.log(`You talk to ${character.name} ` +
-                            `${truthsBefore < truthsAfter ?
-                                `and learn about "${newTruth.name}"` :
-                                "but learn nothing of importance"}`)
-            }
+            this.player.learnTruth(newTruth)
+            let truthsAfter = this.player.truths.length
+            console.log(`You talk to ${character.name} ` +
+                        `${truthsBefore < truthsAfter ?
+                            `and learn about "${newTruth.name}"` :
+                            "but learn nothing of importance"}`)
         } else {
             console.log(`${character.name} refuses to talk to you`)
         }
@@ -288,13 +285,16 @@ class Engine {
                     `and learns about "${newTruth.name}"` :
                     "but learns nothing of importance"
                 }`)
-            this.printSimulationAction(
-                `${character1.name} attacks ${character2.name}`
-            , character1.location == this.player.location)
-            this.printSimulationAction(
-                `${character2.name} is now unconcious on the floor`
-            , character1.location == this.player.location)
-            this.deadCharacters.push(character2)
+
+            if (this.player) {
+                this.printSimulationAction(
+                    `${character1.name} attacks ${character2.name}`
+                , character1.location == this.player.location)
+                this.printSimulationAction(
+                    `${character2.name} is now unconcious on the floor`
+                , character1.location == this.player.location)
+                this.deadCharacters.push(character2)
+            }
         }
     }
 
@@ -316,9 +316,11 @@ class Engine {
                         `${truthsBefore < truthsAfter ?
                             `and learns about "${newTruth.name}"` : "but learns nothing of importance"}`
                         )
-                    this.printSimulationAction(
-                        `${character1.name} talks to ${character2.name} but you can't hear what they're saying.`
-                    , character1.location == this.player.location)
+                    if (this.player) {
+                        this.printSimulationAction(
+                            `${character1.name} talks to ${character2.name} but you can't hear what they're saying.`
+                        , character1.location == this.player.location)
+                    }
                 }
             } else {
                 this.printSimulationAction(
@@ -345,9 +347,15 @@ class Engine {
                     `and learns about "${newTruth.name}"` :
                     "but learns nothing of importance"}`)
 
-            this.printSimulationAction(
-                `${character.name} leaves the room`
-            , character.location == this.player.location)
+            if (this.player) {
+                this.printSimulationAction(
+                    `${character.name} arrives at the location`
+                , location == this.player.location)
+
+                this.printSimulationAction(
+                    `${character.name} leaves the location`
+                , character.location == this.player.location)
+            }
 
             character.location = location
         }
@@ -368,9 +376,11 @@ class Engine {
                     `and learns about "${newTruth.name}"` :
                     "but learns nothing of importance"}`)
 
-            this.printSimulationAction(
-                `${character.name} is walking around.`
-            , location == this.player.location)
+            if (this.player) {
+                this.printSimulationAction(
+                    `${character.name} is having a look around.`
+                , location == this.player.location)
+            }
         }
     }
 
