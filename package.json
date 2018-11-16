@@ -1,0 +1,23 @@
+{
+  "name": "speak_the_truth",
+  "version": "1.0.0",
+  "description": "A agent based Clue style mystery simulation",
+  "main": "game.js",
+  "dependencies": {
+    "inquirer": "^6.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node simulation.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codehugger/speak_the_truth.git"
+  },
+  "author": "Benedikt, Bjarki & Carl",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/codehugger/speak_the_truth/issues"
+  },
+  "homepage": "https://github.com/codehugger/speak_the_truth#readme"
+}
