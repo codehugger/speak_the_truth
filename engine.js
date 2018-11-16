@@ -320,6 +320,7 @@ class Engine {
                 }`)
 
             if (this.player) {
+                // If the player is in the location print that there has been an attack
                 this.printAction(
                     `${character1.name} attacks ${character2.name}`
                 , character1.location == this.player.location)
@@ -327,6 +328,11 @@ class Engine {
                     `${character2.name} is now unconcious on the floor`
                 , character1.location == this.player.location)
                 this.deadCharacters.push(character2)
+
+                // If the player is not at the attack location print out scream
+                this.printAction(
+                    `You here a terrible scream from the ${character1.location.name}`
+                , character1.location != this.player.location)
             }
         }
     }
