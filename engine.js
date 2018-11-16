@@ -19,7 +19,7 @@ class Engine {
         this.isSimulation = false
 
         if (player) {
-            this.player = new Character(this, "Detective Shaw")
+            this.player = new Character(this, "Detective Legrasse")
         }
 
         // Override with options
