@@ -99,6 +99,11 @@ inquirer
             endTurn()
         }
 
+        function showCurrentKnowledge() {
+            engine.playerPrintKnowledge()
+            ask()
+        }
+
         function endTurn() {
             if (engine.canStep()) {
                 engine.step()
@@ -123,7 +128,7 @@ inquirer
                     type: 'list',
                     name: 'action',
                     message: 'What would you like to do?',
-                    choices: engine.playerAvailableActions()
+                    choices: engine.playerAvailableActions().concat(["Review Knowledge"])
                 }]).then(answers => {
                     if (answers.action == 'Explore') {
                         explore()
@@ -133,6 +138,8 @@ inquirer
                         investigate()
                     } else if (answers.action == 'Attack') {
                         attack()
+                    } else if (answers.action == 'Review Knowledge') {
+                        showCurrentKnowledge()
                     }
                 })
             } else {

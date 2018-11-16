@@ -1,6 +1,6 @@
 const Engine = require('./Engine.js').Engine
 
-var engine = new Engine(6, 8, 8, 3)
+var engine = new Engine(6, 8, 8, 3, false, { isSimulation: true })
 
 let everybodyDead = 0
 let wholeTruthDiscovered = 0

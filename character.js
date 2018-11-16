@@ -11,6 +11,18 @@ class Character {
         this.truths = []
         this.actionMemory = []
 
+        // Locations visited
+        this.locationsVisited = []
+
+        // Locations investigated
+        this.locationsInvestigated = []
+
+        // Characters spoken to
+        this.charactersSpokenTo = []
+
+        // Characters attacked
+        this.charactersAttacked = []
+
         if (personality.empty) {
             this.personality = [Math.random(),
                                 Math.random(),
@@ -66,6 +78,10 @@ class Character {
     reset() {
         this.truths = []
         this.alive = true
+        this.charactersAttacked = []
+        this.charactersSpokenTo = []
+        this.locationsVisited = []
+        this.locationsInvestigated = []
     }
 
     /**
@@ -140,6 +156,7 @@ class Character {
      */
     attack(character) {
         this.engine.attack(this, character)
+        this.charactersSpokenTo.push(character)
     }
 
     /**
@@ -148,6 +165,7 @@ class Character {
      */
     talkTo(character) {
         this.engine.talkTo(this, character)
+        this.charactersSpokenTo.push(character)
     }
 
     /**
@@ -156,6 +174,7 @@ class Character {
      */
     travelTo(location) {
         this.engine.travelTo(this, location)
+        this.locationsVisited.push(location)
     }
 
     /**
@@ -163,6 +182,7 @@ class Character {
      */
     investigate() {
         this.engine.investigate(this, this.location)
+        this.locationsInvestigated.push(this.location)
     }
 
     /**

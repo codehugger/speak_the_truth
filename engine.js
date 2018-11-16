@@ -16,6 +16,7 @@ class Engine {
         this.stepCount = 0
         this.regenerateCharacters = true
         this.wholeTruthDiscovered = false
+        this.isSimulation = false
 
         if (player) {
             this.player = new Character(this, "Detective Shaw")
@@ -63,8 +64,8 @@ class Engine {
         this.deadCharacters = []
 
         // Assign characters to random locations
-        if (this.player) { this.player.location = this.locations.sample() }
-        this.characters.forEach(x => x.location = this.locations.sample())
+        if (this.player) { this.player.location = this.locations.sample(); this.player.locationsVisited.push(this.player.location) }
+        this.characters.forEach(c => { c.location = this.locations.sample(); c.locationsVisited.push(c.location) })
 
         // Assign truths randomly to characters and locations
         for (let index = 0; index < this.truths.length; index++) {
@@ -199,6 +200,7 @@ class Engine {
     playerTravelTo(locationName) {
         let location = this.locations.find(l=>l.name == locationName)
 
+        // Learn a truth at the location at random
         let truthsBefore = this.player.truths.length
         let newTruth = location.truths.sample()
         this.player.learnTruth(newTruth)
@@ -210,7 +212,11 @@ class Engine {
             console.log(`As you enter the ${locationName} you discover a clue "${newTruth.name}"`)
         }
 
+        // Update the player's location
         this.player.location = location
+
+        // Keep track of locations visited
+        this.player.locationsVisited.push(location)
     }
 
     /**
@@ -220,16 +226,22 @@ class Engine {
     playerAttack(characterName) {
         let character = this.characters.find(c=>c.name == characterName)
         if (character != this.player) {
+            // Learn a truth from the victim at random
             let truthsBefore = this.player.truths.length
             let newTruth = character.truths.sample()
             this.player.learnTruth(newTruth)
             let truthsAfter = this.player.truths.length
+
+            // Kill the character and add to the deathpool
             character.die()
+            this.deadCharacters.push(character)
+
             console.log(`You attack ${character.name} in a violent attempt to get at the truth ` +
                         `${truthsBefore < truthsAfter ? `and learn about "${newTruth.name}"` : "but learn nothing of importance"}`)
             console.log(`${character.name} is knocked unconcious`)
-            this.deadCharacters.push(character)
         }
+
+        this.player.charactersAttacked.push(character)
     }
 
     /**
@@ -241,10 +253,12 @@ class Engine {
 
         // TODO: since the player has no way to improve his stats this needs to work differently
         if (this.player.likes(character)) {
+            // Learn the truth from given character at random
             let truthsBefore = this.player.truths.length
             let newTruth = character.truths.sample()
             this.player.learnTruth(newTruth)
             let truthsAfter = this.player.truths.length
+
             console.log(`You talk to ${character.name} ` +
                         `${truthsBefore < truthsAfter ?
                             `and learn about "${newTruth.name}"` :
@@ -252,19 +266,38 @@ class Engine {
         } else {
             console.log(`${character.name} refuses to talk to you`)
         }
+
+        // Keep track of which characters the player has spoken to
+        this.player.charactersSpokenTo.push(character)
     }
 
     /**
      * Player investigates the location he is in
      */
     playerInvestigate() {
+        // Learn a truth at random from the investigated location
         let truthsBefore = this.player.truths.length
         let newTruth = this.player.location.truths.sample()
         this.player.learnTruth(newTruth)
         let truthsAfter = this.player.truths.length
+
         console.log(`You investigate the ${this.player.location.name} ` +
                     `${truthsBefore < truthsAfter ? `and discover a clue "${newTruth.name}"` :
                                                     "but learng nothing of importance"}`)
+
+        // Keep track of the locations the player has visited
+        this.player.locationsInvestigated.push(this.player.location)
+    }
+
+    /**
+     * Prints the knowledge the player has
+     */
+    playerPrintKnowledge() {
+        console.log('People inteviewed:', this.player.charactersSpokenTo.distinct().map(c=>c.name).join(", "))
+        console.log('People attacked:', this.player.charactersAttacked.distinct().map(c=>c.name).join(", "))
+        console.log('Locations visited:', this.player.locationsVisited.distinct().map(l=>l.name).join(", "))
+        console.log('Locations investigated:', this.player.locationsInvestigated.distinct().map(l=>l.name).join(", "))
+        console.log('Truths revealed:', this.player.truths.distinct().map(t=>`"${t.name}"`).join(", "))
     }
 
     /**
@@ -279,7 +312,7 @@ class Engine {
             character1.learnTruth(newTruth)
             let truthsAfter = character1.truths.length
             character2.die()
-            this.printSimulationAction(
+            this.printAction(
                 `${character1.name} attacks ${character2.name} in the ${character2.location.name}` +
                 `${truthsBefore < truthsAfter ?
                     `and learns about "${newTruth.name}"` :
@@ -287,10 +320,10 @@ class Engine {
                 }`)
 
             if (this.player) {
-                this.printSimulationAction(
+                this.printAction(
                     `${character1.name} attacks ${character2.name}`
                 , character1.location == this.player.location)
-                this.printSimulationAction(
+                this.printAction(
                     `${character2.name} is now unconcious on the floor`
                 , character1.location == this.player.location)
                 this.deadCharacters.push(character2)
@@ -311,19 +344,19 @@ class Engine {
                 if (newTruth) {
                     character1.learnTruth(newTruth)
                     let truthsAfter = character1.truths.length
-                    this.printSimulationAction(
+                    this.printAction(
                         `${character1.name} talks to ${character2.name} in the ${character2.location.name} ` +
                         `${truthsBefore < truthsAfter ?
                             `and learns about "${newTruth.name}"` : "but learns nothing of importance"}`
                         )
                     if (this.player) {
-                        this.printSimulationAction(
+                        this.printAction(
                             `${character1.name} talks to ${character2.name} but you can't hear what they're saying.`
                         , character1.location == this.player.location)
                     }
                 }
             } else {
-                this.printSimulationAction(
+                this.printAction(
                     `${character1.name} tries to talk to ${character2.name} but ${character2.name} refuses to pass on any knowledge`)
             }
         }
@@ -341,18 +374,18 @@ class Engine {
             character.learnTruth(newTruth)
             let truthsAfter = character.truths.length
 
-            this.printSimulationAction(
+            this.printAction(
                 `${character.name} goes to the ${location.name} ` +
                 `${truthsBefore < truthsAfter ?
                     `and learns about "${newTruth.name}"` :
                     "but learns nothing of importance"}`)
 
             if (this.player) {
-                this.printSimulationAction(
+                this.printAction(
                     `${character.name} arrives at the location`
                 , location == this.player.location)
 
-                this.printSimulationAction(
+                this.printAction(
                     `${character.name} leaves the location`
                 , character.location == this.player.location)
             }
@@ -370,14 +403,14 @@ class Engine {
             let newTruth = location.truths.sample()
             character.learnTruth(newTruth)
             let truthsAfter = character.truths.length
-            this.printSimulationAction(
+            this.printAction(
                 `${character.name} investigates the ${location.name} ` +
                 `${truthsBefore < truthsAfter ?
                     `and learns about "${newTruth.name}"` :
                     "but learns nothing of importance"}`)
 
             if (this.player) {
-                this.printSimulationAction(
+                this.printAction(
                     `${character.name} is having a look around.`
                 , location == this.player.location)
             }
@@ -389,7 +422,7 @@ class Engine {
      * @param {Character} character wanderer
      */
     wanderOff(character) {
-        console.log(`${character.name} has wandered off into the night.`)
+        this.printAction(`${character.name} has wandered off into the night.`)
         character.die()
         this.deadCharacters.push(character)
     }
@@ -402,14 +435,16 @@ class Engine {
         for (let index = 0; index < this.characters.length; index++) {
             const character = this.characters[index]
             if (this.knowsTheWholeTruth(character)) {
-                this.printSimulationAction(`${character.name} has learned the whole truth!`)
-                this.printSimulationAction(`${character.name} has learned truth and is now speaking to the press!`, true)
+                this.printAction(`${character.name} has learned the whole truth!`)
+                if (this.player) {
+                    console.log(`${character.name} has learned truth and is now speaking to the press!`)
+                }
                 return false
             }
         }
 
         // Has a truth been lost?
-        if (this.truthLost()) { this.printSimulationAction(`A truth has been lost!`); return false }
+        if (this.truthLost()) { this.printAction(`A truth has been lost!`); return false }
 
         // Is everybody dead?
         if (this.characters.filter(x => x.alive) == 0 && !this.player) { console.log(`Everybody is dead!`); return false }
@@ -492,17 +527,24 @@ class Engine {
      * @param {string} action an action happening in the engine
      * @param {boolean} canPlayerSee determines whether the player should see the action or not
      */
-    printSimulationAction(action, canPlayerSee=false) {
-        if (canPlayerSee) {
+    printAction(action, canPlayerSee=false) {
+        if (canPlayerSee || this.isSimulation) {
             console.log(action)
         }
     }
 
     printStateOfTheWorld() {
         console.log("========== THE WORLD ==========")
-        console.log(`The whole truth: [${this.truths.map(x => `"${x.name}"`).join(",")}]`)
+        console.log(`The whole truth: [${this.truths.map(x => `"${x.name}"`).join(", ")}]`)
         this.locations.forEach(x => console.log(x.toString()))
-        this.characters.filter(c=>c.alive).forEach(x => console.log(x.toString()))
+        this.characters.filter(c=>c.alive).forEach(c=> {
+            console.log(c.toString())
+            console.log('- People inteviewed:', c.charactersSpokenTo.distinct().map(c=>c.name).join(", "))
+            console.log('- People attacked:', c.charactersAttacked.distinct().map(c=>c.name).join(", "))
+            console.log('- Locations visited:', c.locationsVisited.distinct().map(l=>l.name).join(", "))
+            console.log('- Locations investigated:', c.locationsInvestigated.distinct().map(l=>l.name).join(", "))
+            console.log('- Truths revealed:', c.truths.map(t=>`"${t.name}"`).join(", "))
+        })
         this.weapons.forEach(x=>console.log(x.toString()))
         console.log("===============================")
     }
