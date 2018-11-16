@@ -484,7 +484,6 @@ class Engine {
             console.log(`===============================`)
             this.step()
             console.log(`-------------------------------`)
-            this.printStateOfTheWorld()
         }
     }
 
