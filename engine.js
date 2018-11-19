@@ -506,11 +506,19 @@ class Engine {
                 // Add the new character to the pool of characters
                 this.characters.push(newCharacter)
 
-                console.log(`${newCharacter.name} arrives with essential knowledge of [${newCharacter.truths.map(n=>`"${n.name}"`).join(",")}]`)
+                this.printAction(`${newCharacter.name} arrives with essential knowledge of [${newCharacter.truths.map(n=>`"${n.name}"`).join(",")}]`)
             }
 
             // Reset dead characters
             this.deadCharacters = []
+        }
+
+        // In the somewhat unlikely event that the last character dies but no truth has been lost generate a new character
+        if (this.characters.filter(c=>c.alive).length == 0) {
+            let newCharacter = new Character(this)
+            newCharacter.location = this.locations.sample()
+            this.characters.push(newCharacter)
+            this.printAction(`${newCharacter.name} arrives`)
         }
     }
 
