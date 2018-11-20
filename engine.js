@@ -6,7 +6,7 @@ const Truth = require('./truth.js').Truth
 require('./utils.js')
 
 class Engine {
-    constructor(location_count=5, character_count=5, weapon_count=5, truth_count=5, player=false, options={}) {
+    constructor(location_count=5, character_count=5, truth_count=5, player=false, options={}) {
         // Init
         this.characters = []
         this.locations = []
@@ -14,9 +14,11 @@ class Engine {
         this.truths = []
         this.deadCharacters = []
         this.stepCount = 0
-        this.regenerateCharacters = true
+        this.needBased = true
         this.wholeTruthDiscovered = false
         this.isSimulation = false
+        this.allowDeathOfAll = false
+        this.iterations = 1000
 
         if (player) {
             this.player = new Character(this, "Detective Legrasse")
@@ -36,7 +38,7 @@ class Engine {
         }
 
         // Generate weapons
-        for (let i = 0; i < weapon_count; i++) {
+        for (let i = 0; i < 8; i++) {
             this.weapons.push(new Weapon(this))
         }
 
@@ -494,7 +496,7 @@ class Engine {
             // make sure we don't have any duplicate truths
             lostTruths = lostTruths.distinct()
 
-            if (lostTruths.length > 0) {
+            if (lostTruths.length > 0 && this.needBased) {
                 // pick a dead character at random and use as template for new character
                 let modelCharacter = this.deadCharacters.sample()
                 // Spawn a new character with a mutated personality
@@ -514,7 +516,7 @@ class Engine {
         }
 
         // In the somewhat unlikely event that the last character dies but no truth has been lost generate a new character
-        if (this.characters.filter(c=>c.alive).length == 0) {
+        if (this.characters.filter(c=>c.alive).length == 0 && this.needBased && !this.allowDeathOfAll) {
             let newCharacter = new Character(this)
             newCharacter.location = this.locations.sample()
             this.characters.push(newCharacter)
@@ -527,13 +529,15 @@ class Engine {
      */
     run() {
         this.printStateOfTheWorld()
-        while (this.canStep() && this.stepCount < 1000) {
+        while (this.canStep() && this.stepCount < this.iterations) {
             this.stepCount += 1
-            console.log(`Round ${this.stepCount}`)
-            console.log(`===============================`)
+            this.printAction("================================================================================")
+            this.printAction(`Round ${this.stepCount}`)
+            this.printAction("================================================================================")
             this.step()
-            console.log(`-------------------------------`)
+            this.printAction("--------------------------------------------------------------------------------")
         }
+        this.printStateOfTheWorld()
     }
 
     /**
@@ -542,25 +546,28 @@ class Engine {
      * @param {boolean} canPlayerSee determines whether the player should see the action or not
      */
     printAction(action, canPlayerSee=false) {
-        if (canPlayerSee || this.isSimulation) {
+        if ((canPlayerSee || this.isSimulation) && this.verbose) {
             console.log(action)
         }
     }
 
     printStateOfTheWorld() {
-        console.log("========== THE WORLD ==========")
-        console.log(`The whole truth: [${this.truths.map(x => `"${x.name}"`).join(", ")}]`)
-        this.locations.forEach(x => console.log(x.toString()))
-        this.characters.filter(c=>c.alive).forEach(c=> {
-            console.log(c.toString())
-            console.log('- People inteviewed:', c.charactersSpokenTo.distinct().map(c=>c.name).join(", "))
-            console.log('- People attacked:', c.charactersAttacked.distinct().map(c=>c.name).join(", "))
-            console.log('- Locations visited:', c.locationsVisited.distinct().map(l=>l.name).join(", "))
-            console.log('- Locations investigated:', c.locationsInvestigated.distinct().map(l=>l.name).join(", "))
-            console.log('- Truths revealed:', c.truths.map(t=>`"${t.name}"`).join(", "))
+        this.printAction("--------------------------------------------------------------------------------")
+        this.printAction(`The whole truth: [${this.truths.map(x => `"${x.name}"`).join(", ")}]`)
+        this.printAction(`Iterations ${this.stepCount}`)
+        this.locations.forEach(l=> {
+            this.printAction(l.toString())
+            this.printAction('- Truths contained:', l.truths.map(t => `${t.name}`).join(", "))
         })
-        this.weapons.forEach(x=>console.log(x.toString()))
-        console.log("===============================")
+        this.characters.filter(c=>c.alive).forEach(c => {
+            this.printAction(c.toString())
+            this.printAction('- People inteviewed:', c.charactersSpokenTo.distinct().map(c=>c.name).join(", "))
+            this.printAction('- People attacked:', c.charactersAttacked.distinct().map(c=>c.name).join(", "))
+            this.printAction('- Locations visited:', c.locationsVisited.distinct().map(l=>l.name).join(", "))
+            this.printAction('- Locations investigated:', c.locationsInvestigated.distinct().map(l=>l.name).join(", "))
+            this.printAction('- Truths revealed:', c.truths.map(t=>`"${t.name}"`).join(", "))
+            this.printAction('- Has discovered whole truth:', this.knowsTheWholeTruth(c))
+        })
     }
 }
 

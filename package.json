@@ -4,6 +4,7 @@
   "description": "A agent based Clue style mystery simulation",
   "main": "game.js",
   "dependencies": {
+    "commander": "^2.19.0",
     "inquirer": "^6.2.0"
   },
   "devDependencies": {},
