@@ -1,4 +1,5 @@
 const inquirer = require('inquirer')
+const program = require('commander')
 const Engine = require('./engine').Engine
 
 let characterCount = 0
@@ -7,6 +8,13 @@ let weaponCount = 0
 let truthCount = 0
 var engine;
 
+program
+    .version('0.1.0')
+    .option('-d, --debug')
+    .parseOptions(process.argv)
+
+let options = { "debug": program.debug }
+
 inquirer.prompt([
     // {
     //     type: 'list',
@@ -14,30 +22,30 @@ inquirer.prompt([
     //     message: 'What difficulty level would you like?',
     //     choices: ['Easy', 'Medium', 'Hard']
     // },
-    {
-        type: 'list',
-        name: 'agression',
-        message: 'Oh no! there is a man!',
-        choices: ['Hit the man!', 'run away']
-    },
-    {
-        type: 'list',
-        name: 'curiousity',
-        message: 'Oh no there is a button',
-        choices: ['press it', 'run away', '']
-    },
-    {
-        type: 'list',
-        name: 'intelligence',
-        message: 'What is the answer to life, something else and the universe?',
-        choices: ['Hit the man!', '42']
-    },
-    {
-        type: "list",
-        name: "charisma",
-        message: "GOOD LOOKING PERSON!!!",
-        choices: ["Hit the man!", "*wolf whistle*"]
-    }
+    // {
+    //     type: 'list',
+    //     name: 'agression',
+    //     message: 'Oh no! there is a man!',
+    //     choices: ['Hit the man!', 'run away']
+    // },
+    // {
+    //     type: 'list',
+    //     name: 'curiousity',
+    //     message: 'Oh no there is a button',
+    //     choices: ['press it', 'run away', '']
+    // },
+    // {
+    //     type: 'list',
+    //     name: 'intelligence',
+    //     message: 'What is the answer to life, something else and the universe?',
+    //     choices: ['Hit the man!', '42']
+    // },
+    // {
+    //     type: "list",
+    //     name: "charisma",
+    //     message: "GOOD LOOKING PERSON!!!",
+    //     choices: ["Hit the man!", "*wolf whistle*"]
+    // }
 ]).then(answer => {
     switch(answer.difficulty) {
         case 'Medium': {
@@ -51,7 +59,7 @@ inquirer.prompt([
         }
     }
 
-    engine = new Engine(locationCount, characterCount, weaponCount, truthCount, true)
+    engine = new Engine(locationCount, characterCount, weaponCount, truthCount, true, options)
 
     function attack() {
         if (engine.playerAvailableCharacters().length > 1) {
@@ -105,7 +113,7 @@ inquirer.prompt([
     }
 
     function showCurrentKnowledge() {
-        engine.playerPrintKnowledge()
+        engine.playerPrintKnowledge(program.debug)
         ask()
     }
 
@@ -161,19 +169,19 @@ inquirer.prompt([
                 choices: engine.playerAvailableActions().concat(["Review Knowledge"])
             }]).then(answers => {
                 if (answers.action == 'Explore') {
-                    process.stdout.write('\033c');
+                    //process.stdout.write('\033c');
                     explore()
                 } else if (answers.action == 'Talk') {
-                    process.stdout.write('\033c');
+                    //process.stdout.write('\033c');
                     talkTo()
                 } else if (answers.action == 'Investigate') {
-                    process.stdout.write('\033c');
+                    //process.stdout.write('\033c');
                     investigate()
                 } else if (answers.action == 'Attack') {
-                    process.stdout.write('\033c');
+                    //process.stdout.write('\033c');
                     attack()
                 } else if (answers.action == 'Review Knowledge') {
-                    process.stdout.write('\033c');
+                    //process.stdout.write('\033c');
                     showCurrentKnowledge()
                 }
             })

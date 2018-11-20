@@ -200,7 +200,7 @@ class Character {
         let action = Math.random()
 
         // There is always a 1% chance that the character wanders
-        if (action < 0.01) {
+        if (action < 0.001) {
             this.wanderOff()
         } else {
             // Select another character to interact with
@@ -235,7 +235,10 @@ class Character {
     }
 
     toString() {
-        return `Character name: ${this.name}, personality: [${this.personality.map(x => x.toFixed(2)).join(",")}], truths: [${this.truths.map(x => `"${x.name}"`).join(",")}]`
+        return `Character name: ${this.name}, ` +
+               `personality: [${this.personality.map(x => x.toFixed(2)).join(",")}], ` +
+               `truths: [${this.truths.map(x => `"${x.name}"`).join(",")}], ` +
+               `location: ${this.location ? this.location.name : ""}`
     }
 }
 
