@@ -23,6 +23,12 @@ class Character {
         // Characters attacked
         this.charactersAttacked = []
 
+        // Characters this character has encountered
+        this.charactersEncountered = []
+
+        // Characters known to be dead
+        this.charactersDead = []
+
         if (personality.empty) {
             this.personality = [Math.random(),
                                 Math.random(),

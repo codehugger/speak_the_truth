@@ -67,8 +67,14 @@ class Engine {
         this.deadCharacters = []
 
         // Assign characters to random locations
-        if (this.player) { this.player.location = this.locations.sample(); this.player.locationsVisited.push(this.player.location) }
         this.characters.forEach(c => { c.location = this.locations.sample(); c.locationsVisited.push(c.location) })
+
+        // Assign location and initial parameters to player
+        if (this.player) {
+            this.player.location = this.locations.sample();
+            this.player.locationsVisited.push(this.player.location);
+            this.characters.filter(c=>c.location==this.player.location).forEach(c=>this.player.charactersEncountered.push(c))
+        }
 
         // Assign truths randomly to characters and locations
         for (let index = 0; index < this.truths.length; index++) {
@@ -220,6 +226,9 @@ class Engine {
 
         // Keep track of locations visited
         this.player.locationsVisited.push(location)
+
+        // Keep track of the people seen at the location
+        this.characters.filter(c=>c.location==location).forEach(c=>this.meets(this.player, c))
     }
 
     /**
@@ -245,6 +254,7 @@ class Engine {
         }
 
         this.player.charactersAttacked.push(character)
+        this.player.charactersDead.push(character)
     }
 
     /**
@@ -296,8 +306,10 @@ class Engine {
      * Prints the knowledge the player has
      */
     playerPrintKnowledge(debug=false) {
+        console.log('People encountered:', this.player.charactersEncountered.distinct().map(c=>c.name).join(", "))
         console.log('People inteviewed:', this.player.charactersSpokenTo.distinct().map(c=>c.name).join(", "))
         console.log('People attacked:', this.player.charactersAttacked.distinct().map(c=>c.name).join(", "))
+        console.log('People unconcious:', this.player.charactersDead.distinct().map(c=>c.name).join(", "))
         console.log('Locations visited:', this.player.locationsVisited.distinct().map(l=>l.name).join(", "))
         console.log('Locations investigated:', this.player.locationsInvestigated.distinct().map(l=>l.name).join(", "))
         console.log('Truths revealed:', this.player.truths.distinct().map(t=>`"${t.name}"`).join(", "))
@@ -358,6 +370,9 @@ class Engine {
                 }
             }
         }
+
+        this.characters.forEach(c=>c.charactersDead.push(character2))
+        if (this.player) { this.player.charactersDead.push(character2) }
     }
 
     /**
@@ -420,6 +435,9 @@ class Engine {
             }
 
             character.location = location
+
+            // Records the meetings of the characters
+            this.characters.filter(c=>c.location==location).forEach(c=>this.meets(character, c))
         }
     }
 
@@ -459,6 +477,16 @@ class Engine {
 
         character.die()
         this.deadCharacters.push(character)
+    }
+
+    /**
+     * Records the meeting of two characters
+     * @param {Character} character1 character that encounters
+     * @param {Character} character2 characters that is encounted
+     */
+    meets(character1, character2) {
+        character1.charactersEncountered = character1.charactersEncountered.concat([character2]).distinct()
+        character2.charactersEncountered = character2.charactersEncountered.concat([character1]).distinct()
     }
 
     /**
