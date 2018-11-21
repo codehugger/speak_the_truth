@@ -358,7 +358,7 @@ class Engine {
                 , character1.location == this.player.location)
 
                 // If the player is not at the attack location print out scream
-                this.printAction(`You here a terrible scream from the ${character1.location.name}`
+                this.printAction(`You hear a terrible scream from the ${character1.location.name}`
                 , character1.location != this.player.location)
 
                 this.printAction(`The butler comes running to you and says: "Detective, ${character2.name} has just been attacked!"`

@@ -4,15 +4,16 @@ const Engine = require('./engine.js').Engine
 
 let everybodyDead = 0
 let wholeTruthDiscovered = 0
+let iterationCount = []
 
 var program = require('commander')
 
 program
     .version('0.1.0')
-    .option('-r, --rooms <n>', 'How many rooms?', 8)
-    .option('-c, --characters <n>', 'How many characters?', 8)
-    .option('-l, --clues <n>', 'How many clues?', 3)
-    .option('-i, --iterations <n>', 'Max iterations in a single simulation', 100)
+    .option('-r, --rooms <n>', 'How many rooms?', 15)
+    .option('-c, --characters <n>', 'How many characters?', 12)
+    .option('-l, --clues <n>', 'How many clues?', 9)
+    .option('-i, --iterations <n>', 'Max iterations in a single simulation', 1000)
     .option('-s, --simulations <n>', 'How many simulations?', 1)
     .option('-n, --noneed', 'Turn off need-based character replacement')
     .option('-a, --all', 'Allow the simulation to end in the death of all characters')
@@ -33,6 +34,10 @@ for (let i = 0; i < program.simulations; i++) {
 
     if (engine.characters.filter(c=>c.alive).length == 0) { everybodyDead += 1 }
     else if (engine.wholeTruthDiscovered) { wholeTruthDiscovered += 1 }
+
+    if (!engine.canStep()) {
+        iterationCount.push(engine.stepCount)
+    }
 }
 
 console.log('')
@@ -45,10 +50,12 @@ if (program.simulations > 1) {
     console.log(`* Truth uncovered: ${wholeTruthDiscovered}`)
     console.log(`* Everybody died: ${everybodyDead}`)
     console.log(`* Unresolved: ${program.simulations - wholeTruthDiscovered - everybodyDead}`)
+    console.log(`* Average iterations: ${(iterationCount.reduce((x,y)=>x+y)/iterationCount.length).toFixed(0)}`)
 } else {
     console.log(`* Truth uncovered: ${wholeTruthDiscovered > 0 ? "Yes" : "No" }`)
     console.log(`* Everybody died: ${everybodyDead > 0 ? "Yes": "No" }`)
     console.log(`* Unresolved: ${(everybodyDead == 0 && wholeTruthDiscovered == 0) ? "Yes" : "No" }`)
+    console.log(`* Iterations: ${iterationCount[0]}`)
 }
 console.log('')
 console.log(`## Simulation settings`)
