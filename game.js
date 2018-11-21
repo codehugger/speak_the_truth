@@ -16,12 +16,12 @@ program
 let options = { "debug": program.debug }
 
 inquirer.prompt([
-    // {
-    //     type: 'list',
-    //     name: 'difficulty',
-    //     message: 'What difficulty level would you like?',
-    //     choices: ['Easy', 'Medium', 'Hard']
-    // },
+    {
+        type: 'list',
+        name: 'difficulty',
+        message: 'What difficulty level would you like?',
+        choices: ['Easy', 'Normal', 'Hard']
+    }
     // {
     //     type: 'list',
     //     name: 'agression',
@@ -48,18 +48,18 @@ inquirer.prompt([
     // }
 ]).then(answer => {
     switch(answer.difficulty) {
-        case 'Medium': {
-            characterCount = 10; locationCount = 10; weaponCount = 8; truthCount = 5; break
+        case 'Normal': {
+            characterCount = 8; locationCount = 12; truthCount = 5; difficulty = 'normal'; break
         }
         case 'Hard': {
-            characterCount = 20; locationCount = 15; weaponCount = 8; truthCount = 8; break
+            characterCount = 10; locationCount = 15; truthCount = 7; difficulty = 'hard'; break
         }
         default: {
-            characterCount = 5; locationCount = 5; weaponCount = 5; truthCount = 3; break
+            characterCount = 6; locationCount = 9; truthCount = 3; difficulty = 'easy'; break
         }
     }
 
-    engine = new Engine(locationCount, characterCount, weaponCount, truthCount, true, options)
+    engine = new Engine(locationCount, characterCount, truthCount, true, options)
 
     function attack() {
         if (engine.playerAvailableCharacters().length > 1) {
@@ -125,24 +125,26 @@ inquirer.prompt([
     }
 
     function introduction() {
-        process.stdout.write('\033c');
+        process.stdout.write('\033c')
 
-        console.log("-------------------------------------------------------------------------------------")
-        console.log("A NIGHT TO REMEMBER")
-        console.log("-------------------------------------------------------------------------------------")
-        console.log("It's a dark and stormy night.")
-        console.log("A terrible crime has been committed at the Dunner Mansion.")
-        console.log("The host Mr. Dunner has been killed during a public fundraiser.")
-        console.log("You, my dear detective LeGrasse have been sent to the location.")
-        console.log("Get to the bottom of this before it turns into a media fiasco!")
-        console.log("Everything has been done in order to secure the area.")
-        console.log("However, there simply aren't enough officers available to keep track of everyone.")
-        console.log("The guests themselves seem quite eager to talk to the press.")
-        console.log("As far as I can tell they have started their own little investigation.")
-        console.log("They will stop at nothing!")
-        console.log("Some might even say that they are 'dying' for the truth to come out.")
-        console.log("Solve this quickly! Be thorough! Use force if necessary!")
-        console.log("-------------------------------------------------------------------------------------")
+        console.log(`-------------------------------------------------------------------------------------`)
+        console.log(`A NIGHT TO REMEMBER`)
+        console.log(`-------------------------------------------------------------------------------------`)
+        console.log(`It's a dark and stormy night.`)
+        console.log(`A terrible crime has been committed at the Dunner Mansion.`)
+        console.log(`The host Mr. Dunner has been killed during a public fundraiser.`)
+        console.log(`You, detective LeGrasse have been sent to the location.`)
+        console.log(`Everything has been done in order to secure the area.`)
+        console.log(`We estimate that there are well over 100 guests on premise!`)
+        console.log(`There simply aren't enough police officers to keep track of everyone.`)
+        console.log(`Also, due to someone-soon-to-be-fired's stupidity has resulted in the body being moved.`)
+        console.log(`As far as I can tell the guests have started their own little investigation.`)
+        console.log(`Once they have enough to go on I believe they will talk to the press.`)
+        console.log(`These people will stop at nothing!`)
+        console.log(`Some might even say that they are 'dying' for the truth to come out.`)
+        console.log(`Get to the bottom of this before this turns into a media fiasco!`)
+        console.log(`Solve this quickly! Be thorough! Use force if necessary!`)
+        console.log(`-------------------------------------------------------------------------------------`)
 
         ask()
     }
@@ -159,30 +161,41 @@ inquirer.prompt([
     }
 
     function ask() {
-        printContext()
-
         if (engine.canStep()) {
+            printContext()
+            let choices = engine.playerAvailableActions()
+
+            choices.push("Review Knowledge")
+
+            if (program.debug) {
+                choices.push("Solve")
+            }
+
             inquirer.prompt([{
                 type: 'list',
                 name: 'action',
                 message: 'What would you like to do?',
-                choices: engine.playerAvailableActions().concat(["Review Knowledge"])
+                choices: choices
             }]).then(answers => {
                 if (answers.action == 'Explore') {
-                    //process.stdout.write('\033c');
+                    process.stdout.write('\033c')
                     explore()
                 } else if (answers.action == 'Talk') {
-                    //process.stdout.write('\033c');
+                    process.stdout.write('\033c')
                     talkTo()
                 } else if (answers.action == 'Investigate') {
-                    //process.stdout.write('\033c');
+                    process.stdout.write('\033c')
                     investigate()
                 } else if (answers.action == 'Attack') {
-                    //process.stdout.write('\033c');
+                    process.stdout.write('\033c')
                     attack()
                 } else if (answers.action == 'Review Knowledge') {
-                    //process.stdout.write('\033c');
+                    process.stdout.write('\033c')
                     showCurrentKnowledge()
+                } else if (answers.action == 'Solve') {
+                    process.stdout.write('\033c')
+                    engine.playerSolve()
+                    ask()
                 }
             })
         } else {
@@ -191,4 +204,4 @@ inquirer.prompt([
     }
 
     introduction()
-});
+})

@@ -198,6 +198,18 @@ class Character {
     performAction() {
         // Random action parameter
         let action = Math.random()
+        let noop = Math.random()
+
+        // Depending on difficulty level there is a chance
+        // that a character might stand around and do nothing
+        // easy: 50% chance, normal: 25% chance, hard: 12.5%
+        if (this.engine.difficulty == 'easy' && noop < 0.5) {
+            return false
+        } else if (this.engine.difficulty == 'normal' && noop < 0.25) {
+            return false
+        } else if (this.engine.difficulty == 'hard' && noop < 0.125) {
+            return false
+        }
 
         // There is always a 1% chance that the character wanders
         if (action < 0.001) {
@@ -232,6 +244,7 @@ class Character {
                 }
             }
         }
+        return true
     }
 
     toString() {

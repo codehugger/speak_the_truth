@@ -19,6 +19,7 @@ class Engine {
         this.isSimulation = false
         this.allowDeathOfAll = false
         this.iterations = 100
+        this.diffculty = 'easy'
 
         if (player) {
             this.player = new Character(this, "Detective Legrasse")
@@ -309,6 +310,13 @@ class Engine {
     }
 
     /**
+     * Solves the mystery by assigning all the truths to the player
+     */
+    playerSolve() {
+        this.player.truths = this.truths
+    }
+
+    /**
      * A character attack another character and possibly learns a new truth
      * @param {Character} character1 attacker
      * @param {Character} character2 victim
@@ -460,6 +468,9 @@ class Engine {
         // Does somebody know the whole truth?
         if (this.knowsTheWholeTruth(this.player)) {
             console.log(`Congratulations! You have uncovered enough evidence to press charges.`)
+            console.log(`Location(s): ${this.player.truths.filter(t=>t.isLocation()).map(t=>t.name).join(', ')}`)
+            console.log(`Suspect(s): ${this.player.truths.filter(t=>t.isCharacter()).map(t=>t.name).join(', ')}`)
+            console.log(`Weapon(s): ${this.player.truths.filter(t=>t.isWeapon()).map(t=>t.name).join(', ')}`)
             return false
         }
 

@@ -21,19 +21,40 @@ class Truth {
         }
 
         // Choose one object at random which has not already been used
-        let chosenObject = availableNames.filter(n=>!truthNames.includes(n.name)).sample()
+        this.truthObject = availableNames.filter(n=>!truthNames.includes(n.name)).sample()
 
-        if (chosenObject.constructor.name == 'Character') {
+        if (this.truthObject.constructor.name == 'Character') {
             characterCount += 1
-        } else if (chosenObject.constructor.name == 'Location') {
+        } else if (this.truthObject.constructor.name == 'Location') {
             locationCount += 1
-        } else if (chosenObject.constructor.name == 'Weapon') {
+        } else if (this.truthObject.constructor.name == 'Weapon') {
             weaponCount += 1
         }
 
-        this.name = (name ? name : chosenObject.name)
+        this.name = (name ? name : this.truthObject.name)
 
         truthNames.push(this.name)
+    }
+
+    /**
+     * Returns whether the underlying truth is a location
+     */
+    isLocation() {
+        return this.truthObject.constructor.name == 'Location'
+    }
+
+    /**
+     * Returns whether the underlying truth is a location
+     */
+    isCharacter() {
+        return this.truthObject.constructor.name == 'Character'
+    }
+
+    /**
+     * Returns whether the underlying truth is a location
+     */
+    isWeapon() {
+        return this.truthObject.constructor.name == 'Weapon'
     }
 
     toString() {
