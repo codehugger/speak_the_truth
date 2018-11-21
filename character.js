@@ -153,7 +153,8 @@ class Character {
         this.personality.forEach(function(p) {
             newPersonality.push(Math.max(0, Math.min(1, randomGaussian(p, std))))
         });
-        return newPersonality;
+        let personalitySum = newPersonality.reduce((x,y)=>x+y)
+        return newPersonality.map(p=>p/personalitySum);
     }
 
     /**
