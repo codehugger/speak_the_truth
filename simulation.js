@@ -12,7 +12,7 @@ program
     .option('-r, --rooms <n>', 'How many rooms?', 8)
     .option('-c, --characters <n>', 'How many characters?', 8)
     .option('-l, --clues <n>', 'How many clues?', 3)
-    .option('-i, --iterations <n>', 'Max iterations in a single simulation', 1000)
+    .option('-i, --iterations <n>', 'Max iterations in a single simulation', 100)
     .option('-s, --simulations <n>', 'How many simulations?', 1)
     .option('-n, --noneed', 'Turn off need-based character replacement')
     .option('-a, --all', 'Allow the simulation to end in the death of all characters')
@@ -48,6 +48,7 @@ if (program.simulations > 1) {
 } else {
     console.log(`* Truth uncovered: ${wholeTruthDiscovered > 0 ? "Yes" : "No" }`)
     console.log(`* Everybody died: ${everybodyDead > 0 ? "Yes": "No" }`)
+    console.log(`* Unresolved: ${(everybodyDead == 0 && wholeTruthDiscovered == 0) ? "Yes" : "No" }`)
 }
 console.log('')
 console.log(`## Simulation settings`)

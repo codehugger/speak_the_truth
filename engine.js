@@ -341,7 +341,7 @@ class Engine {
             let truthsAfter = character1.truths.length
             character2.die()
             this.printAction(
-                `${character1.name} attacks ${character2.name} in the ${character2.location.name}` +
+                `${character1.name} attacks ${character2.name} in the ${character2.location.name} ` +
                 `${truthsBefore < truthsAfter ?
                     `and learns about "${newTruth.name}"` :
                     "but learns nothing of importance"
@@ -494,7 +494,7 @@ class Engine {
      */
     canStep() {
         // Does somebody know the whole truth?
-        if (this.knowsTheWholeTruth(this.player)) {
+        if (this.player && this.knowsTheWholeTruth(this.player)) {
             console.log(`Congratulations! You have uncovered enough evidence to press charges.`)
             console.log(`Location(s): ${this.player.truths.filter(t=>t.isLocation()).map(t=>t.name).join(', ')}`)
             console.log(`Suspect(s): ${this.player.truths.filter(t=>t.isCharacter()).map(t=>t.name).join(', ')}`)
@@ -570,7 +570,7 @@ class Engine {
                 // Add the new character to the pool of characters
                 this.characters.push(newCharacter)
 
-                this.printAction(`${newCharacter.name} arrives with essential knowledge of [${newCharacter.truths.map(n=>`"${n.name}"`).join(",")}]`)
+                this.printAction(`${newCharacter.name} arrives with essential knowledge of ${newCharacter.truths.map(n=>`"${n.name}"`).join(", ")}`)
 
                 if (this.player) {
                     console.log(`The butler whispers to you: ${newCharacter.name} seems to have joined the hunt.`)
